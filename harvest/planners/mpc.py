@@ -5,6 +5,7 @@ See README_mpc.md.
 
 import numpy as np
 
+from harvest import sequencing
 from harvest.planners.common import WAIT
 from harvest.planners.lagrangian import plan_lagrangian
 
@@ -66,6 +67,12 @@ from harvest.planners.lagrangian import plan_lagrangian
 #   the plan cuts drying grain too early because nothing after the horizon counts.
 # - A combine still driving at replan time is treated as already there (the planner is only told
 #   where machines are), the same as the other planners.
+#
+# Crop sequencing (harvest/sequencing.py) is part of the model: in rollout() oilseed rape and wheat
+# can't be cut in a scenario until that scenario's planned barley harvest reaches its threshold,
+# counted from the barley already cut (state["active_crops"]). A route is planned (best_route) on
+# values with them blocked before the hours the current plan activates them in each scenario;
+# rollout() then scores it with the rule applied exactly, so a plan that breaks it is never kept.
 
 
 def scenario_values(value, state, params):
@@ -133,9 +140,21 @@ def rollout(schedule, scenarios, state, params):
     ready = [0] * len(machines)  # hour each machine finishes driving
     left = np.zeros((n_scenarios, n_fields, n_hours + 1))
     profit = np.zeros(n_scenarios)
+    # crop sequencing: which crops may be cut yet, in each scenario
+    gated = sequencing_rule(state, params, n_fields)
+    if gated:
+        active = {crop: np.full(n_scenarios, on) for crop, on in state["active_crops"].items()}
+        activation = {crop: np.where(on, 0, n_hours) for crop, on in active.items()}
 
     for hour in range(n_hours):
         left[:, :, hour] = remaining
+        if gated:  # active from the start of the first hour the barley % is reached
+            pct = sequencing.barley_pct_harvested(remaining, params)  # [scenario] or None
+            thresholds = sequencing.thresholds(params)
+            for crop in active:
+                now = pct is None or pct >= thresholds[crop] - sequencing.EPS
+                activation[crop] = np.where(now & ~active[crop], hour, activation[crop])
+                active[crop] = active[crop] | now
         for m, machine in enumerate(machines):
             target = schedule[m, hour]
             if hour >= ready[m] and target != at[m]:  # set off; changes wait until it arrives
@@ -146,13 +165,36 @@ def rollout(schedule, scenarios, state, params):
             elif at[m] < n_fields:  # in a field: cut if there's grain and it's worth cutting
                 field = at[m]
                 value = scenarios[:, field, hour]  # [scenario]
+                if gated and gated[field] is not None:  # not yet active: nothing to cut
+                    value = value * active[gated[field]]
                 ha = ha_cut(remaining[:, field], machine["ha_per_hour"], value)  # [scenario]
                 remaining[:, field] -= ha
                 profit += ha * value - idle_gbp * (ha == 0)
             # at the depot: costs nothing
     left[:, :, n_hours] = remaining
     profit += remaining @ terminal_gbp_per_ha(scenarios, params)
-    return {"left_ha": left, "profit_gbp": profit.mean()}
+    model = {"left_ha": left, "profit_gbp": profit.mean()}
+    if gated:
+        model["activation"] = activation  # {crop: [scenario] plan hour it became active}
+    return model
+
+
+def sequencing_rule(state, params, n_fields):
+    """[field] gated crop or None, if crop sequencing applies to this plan; else None."""
+    if not sequencing.enabled(params) or "active_crops" not in state:
+        return None
+    gated = sequencing.gated_fields(params)
+    return gated if any(crop is not None for crop in gated) and len(gated) == n_fields else None
+
+
+def blocked_scenarios(scenarios, activation, params):
+    """scenarios with each gated field worth 0 before its crop activates in that scenario."""
+    scenarios = scenarios.copy()
+    for f, crop in enumerate(sequencing.gated_fields(params)):
+        if crop is not None:
+            for s, hour in enumerate(activation[crop]):
+                scenarios[s, f, :hour] = 0
+    return scenarios
 
 
 def schedule_profit_gbp(schedule, scenarios, state, params):
@@ -295,12 +337,17 @@ def improve_route(schedule, m, scenarios, state, params):
     """
     n_hours = scenarios.shape[2]
     left_ha, taken = what_others_leave(schedule, m, scenarios, state, params)
+    activation = rollout(schedule, scenarios, state, params).get("activation")
+    if activation is not None:  # route on values blocked until the current plan activates them
+        scenarios_for_route = blocked_scenarios(scenarios, activation, params)
+    else:
+        scenarios_for_route = scenarios
     rate = params["machines"][m]["ha_per_hour"]
     start = state["machine_at"][m]
     best_schedule, best_profit = schedule, -np.inf
     for _ in range(params["mpc_route_passes"]):
         candidate = schedule.copy()
-        candidate[m] = best_route(start, rate, scenarios, left_ha, taken, params)
+        candidate[m] = best_route(start, rate, scenarios_for_route, left_ha, taken, params)
         model = rollout(candidate, scenarios, state, params)
         if model["profit_gbp"] > best_profit:
             best_schedule, best_profit = candidate, model["profit_gbp"]
@@ -317,7 +364,10 @@ def warm_start(value, state, params):
 
     returns: [machine, hour]  field index, or the number of fields for the depot
     """
-    schedule = plan_lagrangian(value, state, params)
+    if sequencing_rule(state, params, value.shape[0]):
+        schedule = sequencing.sequenced(plan_lagrangian)(value, state, params)
+    else:
+        schedule = plan_lagrangian(value, state, params)
     for m in range(len(schedule)):
         place = state["machine_at"][m]
         for hour in range(schedule.shape[1]):
@@ -361,3 +411,6 @@ def plan_mpc(value, state, params):
         if not improved:
             break
     return schedule
+
+
+plan_mpc.handles_sequencing = True  # crop sequencing is in its model; simulate.py doesn't wrap it

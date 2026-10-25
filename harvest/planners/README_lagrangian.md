@@ -49,3 +49,12 @@ Study* 2: 82-114.
 
 Held, M., Wolfe, P. and Crowder, H.P. (1974). Validation of subgradient optimization.
 *Mathematical Programming* 6: 62-88.
+
+
+## Crop sequencing
+
+With `sequencing` on, oilseed rape and wheat can't be cut until enough barley is. When that happens
+depends on this planner's own plan, and the relaxation can't price it (it isn't a per-hour limit on
+combine time, and "only after the barley is X% cut" doesn't split by field), so `simulate.py` wraps
+it in `harvest.sequencing.sequenced`: plan with those crops blocked, find when the plan's barley
+harvest lets them in, re-plan with them blocked only before then, until those hours settle.

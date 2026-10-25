@@ -26,14 +26,43 @@ def main():
     params = yaml.safe_load((ROOT / "params.yaml").read_text(encoding="utf-8"))
     weather = load_forecast(FORECAST_CSV, params)  # with temp_c: moisture model from each reading
     result = run_season(weather, params)
-    print_results(result, params)
+    print_results(result, params, start=pd.Timestamp(params["forecast_start"]))
     plot_results(result, params)
     plt.show()
 
 
-def print_results(result, params):
-    """Summary in the terminal."""
+def activation_lines(result, start=None):
+    """Crop sequencing (harvest/sequencing.py): when each gated crop became active, one line each.
+
+    start: Timestamp (UTC) of season hour 0, to give the date too, or None
+    returns: list of str (empty with sequencing off)
+    """
+    lines = []
+    for crop, when in result.get("activation", {}).items():
+        waited = result["waited_ripe_hours"][crop]
+        if when is None:
+            lines.append(f"{crop}: not active this season (waited {waited} ripe field-hours)")
+            continue
+        date = (
+            ""
+            if start is None
+            else f" ({start + pd.Timedelta(hours=when['hour']):%Y-%m-%d %H:%M} UTC)"
+        )
+        barley = (
+            "no barley" if when["barley_pct"] is None else f"barley {when['barley_pct']:.1f}% cut"
+        )
+        lines.append(
+            f"{crop}: active from hour {when['hour']}{date}, {barley}; "
+            f"waited {waited} ripe field-hours"
+        )
+    return lines
+
+
+def print_results(result, params, start=None):
+    """Summary in the terminal. start: Timestamp (UTC) of season hour 0, for dates."""
     print(f"Replanned {len(result['plans'])} times over {len(result['earned_gbp'])} hours")
+    for line in activation_lines(result, start):
+        print(f"Crop sequencing: {line}")
     costs = result["cost_breakdown_gbp"]  # {item: £}
     items = ", ".join(f"{item} {gbp:,.0f}" for item, gbp in costs.items())
     print(f"Earned:        GBP {result['total_gbp']:>9,.0f}")

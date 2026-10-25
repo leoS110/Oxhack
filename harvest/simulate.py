@@ -20,6 +20,7 @@ Two ways in:
 import numpy as np
 import pandas as pd
 
+from harvest import sequencing
 from harvest.planners import WAIT, plan_urgencygreedy
 from harvest.value import field_values, member_values, predict_moisture, start_moisture
 
@@ -73,7 +74,16 @@ def run_with_forecasts(truth, get_forecast, params, planner=plan_urgencygreedy, 
         "fuel_litres":  [machine, hour]  diesel left in each tank at the end of each hour
         "remaining_ha": [field]          area left standing at the end
         "plans":        one per replan: {"hour", "value" [field, hour], "schedule" [machine, hour]}
+        "moisture_pct": [field, hour]    true grain moisture at the start of each hour, %
+        "activation":   {crop: {"hour", "barley_pct"} or None}  with sequencing on: the season hour
+                                         each gated crop became active and the barley % then
+                                         (None: not in this season). {} with sequencing off
+        "waited_ripe_hours": {crop: int}  field-hours a gated field could have been cut (true
+                                         value above 0, grain left) but its crop wasn't active
     }
+    With sequencing on (params.yaml), oilseed rape and wheat aren't cut until enough barley is
+    (harvest/sequencing.py): the simulator never cuts them before, and the planner is wrapped in
+    sequencing.sequenced so it plans for it.
     """
     fields, machines = params["fields"], params["machines"]  # list of dicts: [field], [machine]
     names = [field["name"] for field in fields]  # [field] str
@@ -101,7 +111,24 @@ def run_with_forecasts(truth, get_forecast, params, planner=plan_urgencygreedy, 
     driving = np.zeros((len(machines), n_hours), dtype=bool)  # [machine, hour]
     plans = []  # list of dicts, one per replan
 
+    # crop sequencing: which crops may be cut yet (harvest/sequencing.py)
+    sequencing_on = sequencing.enabled(params)
+    gated = sequencing.gated_fields(params) if sequencing_on else [None] * len(fields)
+    plan_with = sequencing.sequenced(planner) if sequencing_on else planner
+    active = {}  # {crop: bool}
+    activation = {crop: None for crop in sequencing.thresholds(params)} if sequencing_on else {}
+    waited = {crop: 0 for crop in activation}  # {crop: field-hours ripe but not yet active}
+
     for hour in range(n_hours):
+        if sequencing_on:  # active from the start of the first hour the barley % is reached
+            barley_pct = sequencing.barley_pct_harvested(remaining, params)
+            active = sequencing.update_active(active, barley_pct, params)
+            for crop, on in active.items():
+                if on and activation[crop] is None:
+                    activation[crop] = {"hour": hour, "barley_pct": barley_pct}
+            for f, crop in enumerate(gated):
+                if crop is not None and not active[crop]:
+                    waited[crop] += int(true_value[f, hour] > 0 and remaining[f] > 0)
         new_reading = hour % params["sensor_every_hours"] == 0  # bool
         new_forecast = hour % params["forecast_every_hours"] == 0  # bool
         if new_reading:
@@ -127,8 +154,9 @@ def run_with_forecasts(truth, get_forecast, params, planner=plan_urgencygreedy, 
                 "moisture_pct": reading.copy(),  # latest sensor reading
                 "hour_of_day": (start_hour_utc + hour) % 24,  # UTC, of plan column 0
                 "rain_mm": upcoming["rain_mm"],  # [member, field, plan_hour] forecast rain
+                "active_crops": dict(active),  # {crop: bool}, with sequencing on
             }
-            schedule = planner(value, state, params)  # [machine, plan_hour] field index or WAIT
+            schedule = plan_with(value, state, params)  # [machine, plan_hour] field index or WAIT
             plans.append({"hour": hour, "value": value, "schedule": schedule})
             plan_start = hour  # int, season hour of schedule column 0
 
@@ -144,7 +172,16 @@ def run_with_forecasts(truth, get_forecast, params, planner=plan_urgencygreedy, 
                 machine_at[m] = target
             arrived = hour >= arrives_at[m] and target == machine_at[m]  # bool
             in_field = target < len(fields)  # bool, False at the depot
-            if arrived and in_field and remaining[target] > 0 and true_value[target, hour] > 0:
+            # crop sequencing: a field whose crop isn't active yet isn't cut; the combine waits
+            held_back = arrived and in_field and gated[target] is not None
+            held_back = held_back and not active[gated[target]]
+            if (
+                arrived
+                and in_field
+                and not held_back
+                and remaining[target] > 0
+                and true_value[target, hour] > 0
+            ):
                 ha = min(remaining[target], machine["ha_per_hour"])  # float
                 remaining[target] -= ha
                 earned[hour] += ha * true_value[target, hour]
@@ -176,6 +213,9 @@ def run_with_forecasts(truth, get_forecast, params, planner=plan_urgencygreedy, 
         "fuel_litres": fuel_litres,
         "remaining_ha": remaining,
         "plans": plans,
+        "moisture_pct": true_moisture,
+        "activation": activation,
+        "waited_ripe_hours": waited,
     }
 
 

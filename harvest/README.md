@@ -145,6 +145,9 @@ Two ways in, with the same result:
 | out | `result["fuel_litres"]` | `[K, H]` | diesel left in each tank at the end of each hour |
 | out | `result["remaining_ha"]` | `[F]` | hectares left standing at the end |
 | out | `result["plans"]` | list | one per replan: `{"hour", "value" [F, H], "schedule" [K, H]}` |
+| out | `result["moisture_pct"]` | `[F, H]` | true grain moisture at the start of each hour, % |
+| out | `result["activation"]` | dict | crop sequencing on: `{crop: {"hour", "barley_pct"}}` for oilseed rape and wheat (`None`: not this season); `{}` when off |
+| out | `result["waited_ripe_hours"]` | dict | `{crop: int}` field-hours a held-back field could have been cut (value above 0, grain left) but its crop wasn't active yet |
 
 What it does:
 1. Every `sensor_every_hours` it reads the true grain moisture (the "sensor reading").
@@ -183,6 +186,29 @@ Two helpers, both `[machine, hour]` in and out:
 |---|---|---|
 | `activities(cut_ha, driving, place, n_fields)` | `cut_ha` `[K, H]`, `driving` `[K, H]`, `place` `[K, H]` from `result` | `{"cutting", "driving", "waiting", "depot"}`: `[K, H]` bool each, exactly one True per hour |
 | `running_costs_gbp(cut_ha, driving, place, params)` | the same | `{"diesel", "operator", "escort", "repairs"}`: `[K, H]` £ each |
+
+## 4a. `sequencing.py`: oilseed rape and wheat wait for barley
+
+With `sequencing: enabled: true` in `params.yaml`, oilseed rape and wheat fields can't be cut until
+`osr_requires_barley_pct` / `wheat_requires_barley_pct` of the farm's barley area has been harvested
+(`barley_pct_harvested`: harvested barley ha / barley ha; barley fields without an area are counted
+instead). A crop is active from the first hour that share is reached (`>=`) and stays active; with no
+barley every crop is active from hour 0. Barley is never held back. Moisture keeps being worked out
+every hour for held-back fields, and their waiting-loss clock still runs from season hour 0.
+
+- `simulate.py` never cuts a field whose crop isn't active (the combine waits there), passes
+  `state["active_crops"]` (`{crop: bool}`) to the planner, and returns `activation` and
+  `waited_ripe_hours`. `run.py`, `replay.py` and `compare.py` print each crop's activation hour,
+  date and barley %.
+- Planners that plan the whole horizon at once (lagrangian, the greedy ones, farmer) are wrapped in
+  `sequenced(planner)`: plan with the crops blocked, work out from the plan's barley cutting when
+  they'd activate, re-plan with them blocked only before then, until the hours stop changing (at
+  most `max_iterations`; otherwise the last plan, with a note).
+- `plan_mpc` has the rule in its own model: `rollout` lets a crop be cut in a scenario only once
+  that scenario's barley reaches the threshold, and each route is planned on values blocked until
+  the current plan's activation hours.
+
+With it off, nothing changes.
 
 ## 4b. `past_data.py`: the forecasts that were really issued, for `replay.py` and `compare.py`
 

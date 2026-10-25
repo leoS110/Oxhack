@@ -22,7 +22,7 @@ import yaml
 from harvest import planners
 from harvest.past_data import past_rollout, rollout_days
 from harvest.simulate import activities, run_with_forecasts
-from run import label_dates, mark_new_forecasts, net_gbp_per_hour, plot_results
+from run import activation_lines, label_dates, mark_new_forecasts, net_gbp_per_hour, plot_results
 
 ROOT = Path(__file__).parent
 
@@ -51,6 +51,9 @@ def main():
 
     print()
     print_comparison(results, params)
+    for name, result in results.items():  # crop sequencing: when each held-back crop was let in
+        for line in activation_lines(result, first_hour):
+            print(f"{name:<34} {line}")
     for name, result in results.items():
         fig = plot_results(result, params, start=first_hour, marked_hours=new_runs)
         fig.suptitle(f"{name} (dashed line = a new forecast run)")

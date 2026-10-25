@@ -56,5 +56,16 @@ downloads:
 - a tiny forecast CSV (shuffled rows, some rain) gets a moisture column per crop that matches
   running it by hand, and a CSV without `rain_mm` is rejected.
 
+`test_sequencing.py` checks crop sequencing on a hand-made farm (10 ha barley, oilseed rape, wheat;
+thresholds 20 / 50; two combines):
+
+- with every planner, oilseed rape is never cut before 2 ha of barley is, nor wheat before 5 ha, and
+  each activates at the first hour enough barley is cut; a plan never plans to cut them earlier;
+- the trigger fires at exactly the threshold (`>=`); activation is permanent;
+- no barley: oilseed rape and wheat are active from hour 0; barley fields with no area are counted;
+- sequencing off (and on with thresholds 0) plans and harvests exactly as before, with every
+  planner and on the demo farm;
+- held-back fields keep drying: their moisture at activation is the same as without the rule.
+
 If you replace a function, these tests tell you whether it still fits the pipeline.
 `tiny_farm()` is a good template for a small case where you know the right answer.

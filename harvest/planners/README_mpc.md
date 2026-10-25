@@ -47,3 +47,12 @@ Shapiro, A., Dentcheva, D. and Ruszczyński, A. (2009). *Lectures on Stochastic 
 
 Bertsekas, D.P. (2017). *Dynamic Programming and Optimal Control*, Vol. I, 4th ed. Athena
 Scientific.
+
+
+## Crop sequencing
+
+With `sequencing` on, the rule is part of the MPC's model: in `rollout` oilseed rape and wheat can't
+be cut in a scenario until that scenario's planned barley harvest (counted from what's already cut)
+reaches the threshold. Each route is planned (`best_route`) on values blocked until the hours the
+current plan lets them in, scenario by scenario, and every plan is scored with the rule applied
+exactly. The warm start is the sequenced Lagrangian plan.

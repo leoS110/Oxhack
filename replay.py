@@ -40,7 +40,7 @@ def main():
     result = run_with_forecasts(truth, get_forecast, params, PLANNERS[name], first_hour.hour)
 
     print()
-    print_results(result, params)
+    print_results(result, params, start=first_hour)
     print()
     print_path(result, params, first_hour)
     fig = plot_results(result, params, start=first_hour, marked_hours=list(runs_used))
