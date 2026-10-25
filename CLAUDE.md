@@ -9,6 +9,7 @@ Forecast CSV → value function (£/ha per field per hour) → planner (which fi
 - Live run, today's forecast: `uv run python run.py` (prints results and opens a matplotlib window)
 - Replay past dates with real past forecasts: `uv run python replay.py 2026-10-10 2026-10-25 [planner]` (needs internet the first time)
 - Compare planners on past dates: `uv run python compare.py 2026-10-10 2026-10-25` (every `plan_*` in `harvest/planners/`, same data as replay)
+- Presentation charts for a whole season: `uv run python season.py` (rollout_start to rollout_end in `params.yaml`, replayed with mpc and farmer, results saved and reused; money, money gap and plan PNGs in `outputs/season/`)
 - Fresh forecast: `uv run python data/download_forecast.py`
 - Web app: `uv run --group web uvicorn webapp.server:app`, then open http://localhost:8000 (restart it after Python changes). Its tests: `uv run pytest webapp/tests -q`
 - Farmer site: `uv run --group web uvicorn farmer.server:app --port 8001`, then open http://localhost:8001. Its tests: `uv run pytest farmer/tests -q`

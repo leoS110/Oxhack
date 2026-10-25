@@ -9,3 +9,7 @@ CLAUDE.local.md
 # past forecast runs and weather downloaded by replay.py (harvest/past_data.py), re-downloaded when missing
 data/past_forecasts/
 data/replay_weather/
+
+# season.py saves its replays here (one folder per params file), so the charts can be redrawn
+# without replaying (~10 MB each)
+outputs/season/**/rollout.pkl

@@ -15,6 +15,7 @@ from harvest import past_data
 from harvest.past_data import (
     forecast_runs,
     is_complete,
+    load_params,
     load_run,
     past_forecasts,
     past_rollout,
@@ -268,3 +269,18 @@ def test_a_past_rollout_gives_run_with_forecasts_what_it_needs(monkeypatch):
     assert first_hour == pd.Timestamp("2026-10-10")
     assert len(result["earned_gbp"]) == 48
     assert runs_used == {0: runs[8], 12: runs[9], 36: runs[10]}  # the 9, 10 and 11 Oct runs
+
+
+def test_a_params_file_on_the_command_line_goes_over_params_yaml():
+    args = ["2024-07-01", "--params", str(ROOT / "params_8_fields.yaml"), "2024-07-10", "mpc"]
+    params, rest, name = load_params(args)
+    full, same_args, full_name = load_params(["2024-07-01"])
+    assert rest == ["2024-07-01", "2024-07-10", "mpc"] and name == "params_8_fields"
+    assert same_args == ["2024-07-01"] and full_name == "params"
+    assert len(params["fields"]) == 8 < len(full["fields"])
+    assert np.shape(params["travel_hours"]) == (9, 9)  # the 8 fields and the depot
+    assert params["machines"] == full["machines"]  # everything else from params.yaml
+    # the same journeys as the full farm's table
+    names = [field["name"] for field in full["fields"]]
+    rows = [names.index(field["name"]) for field in params["fields"]] + [len(names)]
+    assert params["travel_hours"] == [[full["travel_hours"][i][j] for j in rows] for i in rows]

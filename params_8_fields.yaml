@@ -1,0 +1,28 @@
+# A smaller farm for quick past rollouts: 8 of the 20 field groups in params.yaml, so replay.py,
+# season.py and compare.py run much faster (plan_mpc's time grows with the number of fields).
+#   uv run python season.py --params params_8_fields.yaml
+#   uv run python replay.py --params params_8_fields.yaml [START END [planner]]
+# Only these keys change; everything else comes from params.yaml. The fields are the 8 groups
+# nearest the yard, keeping the crop mix (1 osr, 4 wheat, 3 barley): 1,642 ha. Their saved weather
+# and forecasts in data/ are reused, so nothing is downloaded again.
+fields:
+  - {name: wangford,          crop: wheat,  area_ha: 217.8, lat: 52.3953, lon: 0.6207}  # 538 acres, 17 fields
+  - {name: elveden,           crop: wheat,  area_ha: 203.6, lat: 52.3893, lon: 0.6719}  # 503 acres, 15 fields
+  - {name: sparks_farm,       crop: barley, area_ha: 188.4, lat: 52.3715, lon: 0.6052}  # 466 acres, 12 fields
+  - {name: chalk_hall_farm,   crop: wheat,  area_ha: 213.2, lat: 52.3741, lon: 0.6370}  # 527 acres, 13 fields
+  - {name: hall_farm,         crop: wheat,  area_ha: 216.9, lat: 52.3660, lon: 0.6951}  # 536 acres, 11 fields
+  - {name: wideham_farm,      crop: osr,    area_ha: 184.3, lat: 52.3559, lon: 0.6367}  # 455 acres, 9 fields
+  - {name: olleys_farm,       crop: barley, area_ha: 204.6, lat: 52.3578, lon: 0.7132}  # 506 acres, 17 fields
+  - {name: euston,            crop: barley, area_ha: 213.6, lat: 52.3573, lon: 0.7452}  # 528 acres, 13 fields
+
+# Fields in the order above, then the depot: the same rows and columns of params.yaml's table.
+travel_hours:
+  - [0.00, 0.25, 0.25, 0.25, 0.50, 0.25, 0.50, 0.75, 0.25]
+  - [0.25, 0.00, 0.25, 0.25, 0.25, 0.25, 0.25, 0.50, 0.00]
+  - [0.25, 0.25, 0.00, 0.25, 0.50, 0.25, 0.50, 0.75, 0.25]
+  - [0.25, 0.25, 0.25, 0.00, 0.25, 0.25, 0.25, 0.50, 0.25]
+  - [0.50, 0.25, 0.50, 0.25, 0.00, 0.25, 0.00, 0.25, 0.25]
+  - [0.25, 0.25, 0.25, 0.25, 0.25, 0.00, 0.25, 0.50, 0.25]
+  - [0.50, 0.25, 0.50, 0.25, 0.00, 0.25, 0.00, 0.25, 0.25]
+  - [0.75, 0.50, 0.75, 0.50, 0.25, 0.50, 0.25, 0.00, 0.25]
+  - [0.25, 0.00, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.00]

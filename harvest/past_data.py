@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 import requests
 import xarray as xr
+import yaml
 
 from harvest.forecast import sort_by_field
 
@@ -45,6 +46,21 @@ WEATHER_VARIABLES = {
     "relative_humidity_2m": "humidity_pct",
     "precipitation": "rain_mm",  # rain + showers + snow, to match the forecast's precipitation
 }
+
+
+def load_params(args):
+    """params.yaml, with the keys of a `--params FILE` on the command line put over it.
+
+    args: the command-line arguments, e.g. ["--params", "params_8_fields.yaml", "2026-10-10", ...]
+    returns: (params, the other arguments, name: the FILE's name without .yaml, or "params")
+    """
+    params = yaml.safe_load((ROOT / "params.yaml").read_text(encoding="utf-8"))
+    if "--params" not in args:
+        return params, args, "params"
+    i = args.index("--params")
+    path = Path(args[i + 1])
+    params.update(yaml.safe_load(path.read_text(encoding="utf-8")))
+    return params, args[:i] + args[i + 2 :], path.stem
 
 
 def rollout_days(args, params):

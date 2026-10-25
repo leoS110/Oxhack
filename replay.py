@@ -3,6 +3,7 @@
 uv run python replay.py                              rollout_start to rollout_end in params.yaml
 uv run python replay.py 2026-10-10 2026-10-25        your own dates (whole days, UTC, both included)
 uv run python replay.py 2026-10-10 2026-10-25 mpc    ... and another planner (any plan_* name)
+uv run python replay.py --params params_8_fields.yaml ...   a smaller farm, much faster
 
 Every forecast_every_hours it takes the newest forecast run published by then and replans; every
 sensor_every_hours too, with a new grain moisture reading. Runs and the weather are downloaded
@@ -12,24 +13,20 @@ happened. At the end it prints the path each machine followed and plots it.
 """
 
 import sys
-from pathlib import Path
 
 import matplotlib.pyplot as plt
-import yaml
 
 from compare import PLANNERS
-from harvest.past_data import ONE_HOUR, past_rollout, rollout_days
+from harvest.past_data import ONE_HOUR, load_params, past_rollout, rollout_days
 from harvest.planners import WAIT
 from harvest.simulate import run_with_forecasts
 from run import plot_results, print_results
 
-ROOT = Path(__file__).parent
 DEFAULT_PLANNER = "mpc"
 
 
 def main():
-    params = yaml.safe_load((ROOT / "params.yaml").read_text(encoding="utf-8"))
-    args = sys.argv[1:]
+    params, args, _ = load_params(sys.argv[1:])
     start, end = rollout_days(args, params)
     name = args[2] if len(args) >= 3 else DEFAULT_PLANNER
     if name not in PLANNERS:

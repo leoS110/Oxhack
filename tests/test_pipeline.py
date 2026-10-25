@@ -20,6 +20,7 @@ from harvest.value import (
     predict_moisture,
     start_moisture,
 )
+from season import count_plans, money_breakdown, with_progress_bar
 
 ROOT = Path(__file__).parent.parent
 MOISTURE_CSV = ROOT / "outputs" / "moisture_forecast.csv"
@@ -769,3 +770,24 @@ def test_demo_runs_end_to_end():
     assert result["fuel_litres"].shape == result["harvesting"].shape
     assert (result["fuel_litres"].min(axis=1) >= reserve).all()  # home before the reserve
     assert (result["fuel_litres"].max(axis=1) <= tank).all()
+
+
+def test_season_money_breakdown_adds_up_to_the_net():
+    params, weather = rain_farm()
+    params["loss_pct_per_hour"] = 1  # so the crop lost standing counts too
+    result = run_season(weather, params, plan_vgreedy)
+    truth = {name: values[[params["truth_member"]]] for name, values in weather.items()}
+    moisture = predict_moisture(start_moisture(truth, params), truth, params)[0]  # [field, hour]
+    money = money_breakdown(result, moisture, params)
+    assert money["drying"] < 0 and money["standing"] < 0
+    assert sum(money.values()) == pytest.approx(result["net_gbp"])
+
+
+def test_season_progress_bar_counts_every_plan(capsys):
+    params, weather = rain_farm()
+    params["sensor_every_hours"], params["forecast_every_hours"] = 2, 3  # plans at hours 0 and 2
+    n_plans = count_plans(params["season_hours"], params)
+    assert n_plans == 2
+    result = run_season(weather, params, with_progress_bar(plan_vgreedy, n_plans, params))
+    assert len(result["plans"]) == n_plans
+    assert f"{n_plans}/{n_plans} plans" in capsys.readouterr().out

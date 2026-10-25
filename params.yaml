@@ -14,14 +14,18 @@ forecast_model: ukmo_uk_ensemble_2km       # Met Office MOGREPS-UK 2 km, 3 membe
 past_weather_days: 21        # days of past weather before forecast_start
 
 # Past rollouts (replay.py, compare.py). Dates on the command line override these.
-rollout_start: "2024-06-09"
-rollout_end: "2024-09-10"    # inclusive
+rollout_start: "2025-07-14"
+rollout_end: "2025-07-25"    # inclusive
 past_forecast_dataset: ecmwf-ifs-ens-forecast-15-day-0-25-degree  # dynamical.org, 00 UTC runs
 forecast_delay_hours: 8      # the 00 UTC run is published around 08 UTC
 forecast_run_every_hours: 24
 magnus_a: 17.625             # dew point to humidity (Alduchov & Eskridge 1996)
 magnus_b_c: 243.04
 past_weather_model: ukmo_uk_deterministic_2km  # Met Office UKV 2 km: Open-Meteo record of what happened
+
+# Season charts (season.py): rollout_start to rollout_end above with plan_mpc and plan_farmer, drawn
+# for slides. Changing season_* keys keeps the saved replay; anything else replays the season again.
+season_bar_width: 40              # characters in the terminal's progress bar while MPC plans
 
 # Farm: 10,000 acres (4,046 ha) around Elveden, Suffolk (the largest farm in lowland Britain).
 # 312 real fields (mean 13 ha) traced from the Esri satellite imagery the map shows, skipping land
@@ -57,9 +61,9 @@ fields:
 # Ritchie Specs: Claas Tucano 440/450 ~650 l, Tucano 320/430 ~500 l (132 US gal). At
 # cutting_diesel_litres_per_ha that is 13-17 hours of cutting: about a day's work per tank.
 machines:
-  - {name: combine_a, ha_per_hour: 1.0, start: depot, fuel_tank_litres: 650}
-  - {name: combine_b, ha_per_hour: 2.0, start: depot, fuel_tank_litres: 500}
-  - {name: combine_c, ha_per_hour: 1.0, start: depot, fuel_tank_litres: 500}
+  - {name: combine_a, ha_per_hour: 2.3, start: depot, fuel_tank_litres: 650}
+  - {name: combine_b, ha_per_hour: 2.0, start: depot, fuel_tank_litres: 600}
+  - {name: combine_c, ha_per_hour: 1.8, start: depot, fuel_tank_litres: 600}
 
 # Fields in the order above, then the depot (the yard at Elveden village, 52.383, 0.675).
 # Straight line between group centres x 1.3 for the roads, at 12 mph, to the nearest 0.25 h.
@@ -119,7 +123,7 @@ min_moisture_pct: 12
 drying_pct_per_hour: 0.3           # in dry air, scaled by (100 - humidity) / 100
 rewetting_pct_per_mm: 0.5
 rain_limit_mm: 0.2                 # no cutting in an hour wetter than this
-loss_pct_per_hour: 0.015           # crop value lost per hour left standing. 0.015 %/h, chosen by the project owner; sits at the top of the overlap of Bolland 1984, Aust. J. Exp. Agric. 24: 391-395 (0.18-0.75 %/day = 0.0075-0.031 %/h) and the BCG Australian barley trial (0.001-0.015 %/h). No oilseed-specific source.
+loss_pct_per_hour: 0.075           # crop value lost per hour left standing. 0.015 %/h, chosen by the project owner; sits at the top of the overlap of Bolland 1984, Aust. J. Exp. Agric. 24: 391-395 (0.18-0.75 %/day = 0.0075-0.031 %/h) and the BCG Australian barley trial (0.001-0.015 %/h). No oilseed-specific source.
 
 # Running costs (harvest/simulate.py): what every plan is scored with, per combine-hour.
 #   cutting: diesel + operator + repairs     driving: diesel + operator + escort + repairs

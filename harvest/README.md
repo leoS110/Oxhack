@@ -188,6 +188,7 @@ Two helpers, both `[machine, hour]` in and out:
 
 | Function | In | Out |
 |---|---|---|
+| `load_params(args)` | command-line arguments | `(params, other arguments, name)`: `params.yaml` with the keys of a `--params FILE` (e.g. `params_8_fields.yaml`) put over it |
 | `rollout_days(args, params)` | command-line arguments | `(start, end)`: the first two arguments as days, or `rollout_start`/`rollout_end` |
 | `past_rollout(start, end, params)` | first and last day | `(truth, get_forecast, first_hour, runs_used)` for `run_with_forecasts`: the three below put together |
 | `open_archive(params)` | | the dynamical.org archive of ECMWF ensemble runs (`past_forecast_dataset`), opened once, the first time something isn't saved |
