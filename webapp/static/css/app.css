@@ -87,6 +87,12 @@ a { color: var(--ink); }
 .swatch-blank { background: var(--paper); border: 1px solid var(--rule); }
 .swatch-rain { border: 2px dashed var(--rain); }
 .swatch-wet { border: 2px solid var(--alarm); }
+/* crop: a short bar in the field-outline colour (a bar, not a square, so it isn't read as a fill) */
+.crop-line { display: inline-block; width: 16px; height: 4px; margin: 0 5px 2px 12px; border: 1px solid var(--ink-2); }
+.crop-line:first-child { margin-left: 4px; }
+.crop-wheat { background: var(--wheat); }
+.crop-barley { background: var(--barley); }
+.crop-osr { background: var(--osr); }
 .loading { font-style: italic; color: var(--ink-2); }
 
 /* combines: a timetable, one row each; the clicked one's reasons underneath */

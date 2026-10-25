@@ -3,10 +3,15 @@
 farm_name: Elveden Estate (demo), Suffolk
 planner: plan_lagrangian      # any plan_* in harvest/planners. plan_mpc earns the same here but takes 3.3 s a season against 0.2 s
 time_zone: Europe/London      # times on screen are UK time (params.yaml forecast_start is UTC)
+# The demo's week. A date replays that week from past data, as replay.py does: the ECMWF ensemble
+# forecasts as issued then and the weather that really followed (downloaded once into data/).
+# Empty: today's forecast (data/forecast.csv), one member playing the real weather, as run.py.
+# Either way it runs in real time: a past week is played on today's date, from its time of day.
+season_start: "2024-06-09"    # UTC day
 
 # Map (webapp/data/demo_farm.geojson holds the field outlines and the yard)
 map_tiles_url: https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}
-map_attribution: Imagery © Esri, Maxar, Earthstar Geographics · Fields © OpenStreetMap contributors
+map_attribution: Imagery © Esri, Maxar, Earthstar Geographics · Fields traced from it, land use © OpenStreetMap contributors
 pass_width_m: 12              # distance between a combine's passes up and down a field (header width)
 combine_gap_m: 30             # how far apart along the passes two combines in the same field are drawn
 yard_gap_m: 60                # how far apart combines park at the yard, in a row south-east of it
@@ -17,4 +22,4 @@ play_seconds_per_hour: 0.5    # playback speed: one simulated hour takes this lo
 band_percentiles: [10, 50, 90]  # forecast members summarised as low / middle / high moisture
 rain_chance_pct: 50           # "rain likely" when at least this % of members rain more than rain_limit_mm
 compare_hours: 24             # the combine card compares cutting now with cutting this many hours later
-night_hours: [17, 7]          # shaded on charts: from 17:00 to 07:00 UK time (late October daylight)
+night_hours: [21, 5]          # shaded on charts: from 21:00 to 05:00 UK time (June daylight)

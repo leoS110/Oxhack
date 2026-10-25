@@ -87,6 +87,7 @@ def farm():
                 "short": labels[f].split()[0],  # "Culford Heath" -> "Culford", for tight spaces
                 "crop": field["crop"],
                 "area_ha": field["area_ha"],
+                "centre": [field["lat"], field["lon"]],  # the middle of its parcels, for labels
                 # [parcel][ring][corner][lat, lng]: Leaflet draws this as one MultiPolygon
                 "outline": [[latlng(parcel)] for parcel in outlines[f]],
                 "path": latlng(path),
@@ -154,12 +155,16 @@ def plan():
         "band_percentiles": demo["band_percentiles"],
         "play_seconds_per_hour": demo["play_seconds_per_hour"],
         "labels": [f"{time:%a %d %b %H:%M}" for time in times],  # [hour + 1]
+        "times_iso": [f"{time:%Y-%m-%dT%H:%M}" for time in times],  # [hour + 1] local time
         "days": [{"hour": h, "label": f"{t:%a %d}"} for h, t in enumerate(times) if t.hour == 0],
         "night": [bool(t.hour >= night_from or t.hour < night_to) for t in times[:-1]],
         "forecast": {
             "start": f"{times[0]:%a %d %b %H:%M}",
             "members": run["n_members"],
+            **run["source"],  # "forecast", "truth", "credit": where the weather comes from
         },
+        # the real moment that plays hour 0: the demo runs in real time (bridge.clock_start)
+        "clock_start_utc": f"{run['clock_start']:%Y-%m-%dT%H:%M:%S}Z",
         "limits": {
             "too_wet_pct": params["max_harvest_moisture_pct"],
             # per crop since drying moved under crops: in params.yaml, so one per field

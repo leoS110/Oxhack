@@ -8,9 +8,11 @@ for every field and hour. The committed copy is real Met Office MOGREPS-UK ensem
 its run time, so keep `forecast_hours` inside that, and at least `season_hours`. For more members,
 set `forecast_model: ecmwf_ifs_europe_ensemble` (ECMWF 9 km, 51 members, ~144 h) and download again.
 
-The demo farm is 10,000 acres of real field parcels around Elveden, Suffolk, in 8 blocks: the
-centres of the blocks in `webapp/data/demo_farm.geojson`. They're up to 17 km apart, so they fall
-in different 2 km grid cells and get slightly different weather. Their `lat`/`lon` only pick the weather; driving
+The demo farm is 10,000 acres around Elveden, Suffolk: 312 real fields traced from satellite
+imagery, in 20 single-crop groups (the model's fields). A group's `lat`/`lon` is the centre of its
+fields; every field's own centre, area and crop is in `data/fields.csv` (`field`, `group`, `crop`,
+`area_ha`, `acres`, `lat`, `lon`). The groups are up to 15 km apart, so they fall in different 2 km
+grid cells and get slightly different weather. Their `lat`/`lon` only pick the weather; driving
 times come from `travel_hours`.
 
 ## Format

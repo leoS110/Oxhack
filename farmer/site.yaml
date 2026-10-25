@@ -2,7 +2,7 @@
 # ../webapp/demo.yaml (read, never changed).
 
 farm_name: Elveden Estate
-place: Oxfordshire
+place: Suffolk
 
 # Field status, worked out from the plan behind the scenes
 ready_chance: 0.7             # "Ready": can be cut now in at least this share of forecasts

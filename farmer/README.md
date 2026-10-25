@@ -16,8 +16,8 @@ Runs next to the demo (port 8000). Restart the server after changing Python file
 | Page | What it shows |
 |---|---|
 | **Home** (`index.html`) | The title, the slogan and **Log in**, which opens the dashboard on the Map (no account check), next to b-roll of the harvest: three aerial clips of machines at work, no people in shot, taking turns, each with its credit (`static/media/CREDITS.md`) |
-| **Map** (`map.html`) | Satellite map, fields filled by status, combines moving along their GPS tracks with a trail, a card per combine (readings, Send there / Back to yard / Call driver). Layer switches for live rain radar, rain forecast and wind, which zoom out to the area around the farm |
-| **Today** (`today.html`) | One big answer (Cut now / Wait a little / Not today), the real weather now and for the next 12 h, every field (Ready / Soon / Wait / Done, % cut, grain moisture, best time), every combine (what it's doing, next move) |
+| **Map** (`map.html`) | Satellite map, fields filled by status and outlined by crop (labels that would overlap hide until you zoom in), combines moving along their GPS tracks with a trail, a card per combine (readings, Send there / Back to yard / Call driver). Layer switches for live rain radar, rain forecast and wind, which zoom out to the area around the farm |
+| **Today** (`today.html`) | One big answer (Cut now / Wait a little / Not today), the real weather now and for the next 12 h, every field (Ready / Soon / Wait / Done, % cut, grain moisture, which combine the plan sends and when, best time), every combine (what it's doing, next move), and two charts of the plan in force on one hour axis: what each field is worth hour by hour (with where each combine is sent) and where each combine goes (done so far, then the plan) |
 | **Weather** (`weather.html`) | Forecast maps (rain, temperature, wind, clouds, radar) with a time slider and play, the next 7 days, and the next 48 h rated for harvesting (good / fair / poor) with the best window |
 | **Control** (`control.html`) | Each combine: fuel, grain tank, speed, switches (engine, header, auto-steer, lights), Send / Yard / Call. Plan switches and Update plan, alert switches, fields with Skip and priority |
 
@@ -26,19 +26,26 @@ Runs next to the demo (port 8000). Restart the server after changing Python file
 - **Real:** the weather. The browser fetches it live from [Open-Meteo](https://open-meteo.com)
   (forecast at the farm and on a 9 x 9 grid around it, for the maps) and
   [RainViewer](https://www.rainviewer.com/api.html) (radar, last 2 hours, up to zoom 7). No keys.
+  When the demo replays a past week (`season_start` in `webapp/demo.yaml`), it shows that week's
+  real weather instead: Open-Meteo's record of the Met Office 2 km model the demo's weather comes
+  from, with the chance of rain from the demo's own forecast (the record has none). Radar only
+  exists live, so its switches are hidden then.
 - **From the model:** fields, combines and GPS tracks come from the simulated season through
   `source.py`, which reads `webapp.demo_state`.
 - **Pretend:** machine readings (fuel, tank, speed) and every button and switch on the control
   panel. They respond (a switch stays switched, a toast says what happened) but don't change the plan.
 
-The fields' weather in the model is the Met Office forecast for the farm, but one forecast member
-plays the real weather (see the demo's caveats), so a field can show "Wait" while the real sky is dry.
+On today's forecast, one forecast member plays the real weather (see the demo's caveats), so a
+field can show "Wait" while the real sky is dry. A past week plays the weather that really
+followed, the same record the weather pages show.
 
 ## The clock
 
-The site follows real time through the season (`forecast_start` in `params.yaml` is hour 0).
-`?t=30` starts at hour 30 and `&speed=60` runs 60 times faster; both are remembered while you
-browse. Click the red clock to go back to live. The weather always shows the real now.
+The site follows real time through the season. On today's forecast, `forecast_start` in
+`params.yaml` is hour 0. A past week is played on today's date: the clock shows the week's date at
+today's time of day (at 08:20 it says Sun 09 Jun 08:20) and runs on from there. `?t=30` starts at
+hour 30 and `&speed=60` runs 60 times faster; both are remembered while you browse. Click the red
+clock to go back to live. The weather always shows the live hour.
 
 ## Files
 
@@ -51,3 +58,4 @@ browse. Click the red clock to go back to live. The weather always shows the rea
 | `static/js/common.js` | top bar, clock, alerts, toasts, pretend switches and readings |
 | `static/js/weather-data.js` | fetching the real weather, colour scales, drawing forecast maps |
 | `static/js/today.js`, `livemap.js`, `weather.js`, `control.js` | one per page |
+| `static/js/plan-charts.js` | Today's two plan charts, plain SVG in the demo's colours |

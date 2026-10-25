@@ -6,6 +6,8 @@ import { $, everySecond, load, makeClock, showAlerts, toast, topbar } from "./co
 import { farmForecast, gridBounds, gridForecast, gridImage, legend, nowIndex, radarFrames, weatherWord, windArrows } from "./weather-data.js";
 
 const { farm, season } = await load();
+// radar is live only: a demo replaying a past week has none to show
+if (farm.week) document.querySelector('[data-layer="radar"]').style.display = "none";
 const clock = makeClock(farm);
 topbar(farm, "weather.html", clock);
 everySecond(clock, season, { hour: (hour) => showAlerts(farm, season, hour) });

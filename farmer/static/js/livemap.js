@@ -1,10 +1,12 @@
 // Live map: satellite, fields shaded by status, combines moving along their GPS tracks, and real
 // weather layers (radar, rain forecast, wind) that zoom out to show the area around the farm.
 
-import { $, ACTIVITY, everySecond, lamp, load, makeClock, showAlerts, telemetry, toast, topbar } from "./common.js";
+import { $, ACTIVITY, crop, everySecond, lamp, load, makeClock, showAlerts, telemetry, toast, topbar } from "./common.js";
 import { gridBounds, gridForecast, gridImage, legend, nowIndex, radarFrames, windArrows } from "./weather-data.js";
 
 const { farm, season } = await load();
+// radar is live only: a demo replaying a past week has none to show
+if (farm.week) $("#layer-radar").closest("label").style.display = "none";
 const clock = makeClock(farm);
 topbar(farm, "map.html", clock);
 const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(`--${name}`).trim();
@@ -14,11 +16,30 @@ L.control.zoom({ position: "bottomright" }).addTo(map);
 L.tileLayer(farm.map.tiles_url, { attribution: farm.map.attribution, maxZoom: 19 }).addTo(map);
 const FARM_VIEW = { paddingTopLeft: [340, 30], paddingBottomRight: [270, 70] }; // clear of the panels
 
-const fields = farm.fields.map((field) =>
-  L.polygon(field.outline, { color: css("paper"), weight: 1.5, fillOpacity: 0.4 })
-    .bindTooltip(field.label, { permanent: true, direction: "center", className: "field-tag" })
-    .addTo(map),
+// outline colour = crop, fill = status. Each field is a group of real fields: its label sits in
+// the middle of the group, not on its biggest field, so the labels overlap less.
+const fields = farm.fields.map((field) => L.polygon(field.outline, { color: css(field.crop), weight: 2, fillOpacity: 0.4 }).addTo(map));
+const labels = farm.fields.map((field) =>
+  L.tooltip({ permanent: true, direction: "center", className: "field-tag" }).setLatLng(field.centre).setContent(field.label).addTo(map),
 );
+// a label that would sit on another is hidden until you zoom in; the bigger group keeps its label
+const labelOrder = farm.fields.map((_, f) => f).sort((a, b) => farm.fields[b].area_ha - farm.fields[a].area_ha);
+function declutter() {
+  const kept = [];
+  labelOrder.forEach((f) => {
+    const element = labels[f].getElement();
+    if (!element) return;
+    element.style.visibility = "";
+    const box = element.getBoundingClientRect();
+    const overlaps = kept.some((k) => box.left < k.right && box.right > k.left && box.top < k.bottom && box.bottom > k.top);
+    if (overlaps) element.style.visibility = "hidden";
+    else kept.push(box);
+  });
+}
+map.on("zoomend", declutter);
+$("#crop-key").innerHTML = [...new Set(farm.fields.map((field) => field.crop))]
+  .map((name) => `<span>${crop(name)}</span>`)
+  .join("");
 const farmBounds = L.featureGroup(fields).getBounds();
 map.fitBounds(farmBounds, FARM_VIEW);
 
@@ -90,8 +111,9 @@ function showHour(hour) {
   farm.fields.forEach((field, f) => {
     const status = season.status[f][hour];
     fields[f].setStyle({ fillColor: css(status), fillOpacity: shade && status !== "done" ? 0.4 : 0 });
-    fields[f].setTooltipContent(`${field.label} · ${lamp(status)}`);
+    labels[f].setContent(`${field.label} · ${lamp(status)}`);
   });
+  declutter(); // the words changed, so the labels' widths did too
   farm.machines.forEach((_, m) => {
     const element = document.getElementById(`marker-${m}`);
     if (element) element.className = `marker ${season.activity[m][hour]}`;

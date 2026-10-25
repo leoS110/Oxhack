@@ -28,6 +28,10 @@
   --soil: #6e5232; /* on the road */
   --rain: #2f6690; /* rain, chance of rain */
   --alarm: #a8321f; /* too wet to cut, value lost */
+  /* crop: field outlines on the maps and their key, nothing else */
+  --wheat: var(--paper); /* the plain pale outline */
+  --barley: #d36bb5; /* heather */
+  --osr: #5cc8d6; /* verdigris */
 
   --font-text: "Newsreader", Georgia, serif;
   --font-data: "IBM Plex Mono", ui-monospace, monospace;

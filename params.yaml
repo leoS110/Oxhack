@@ -23,22 +23,35 @@ magnus_a: 17.625             # dew point to humidity (Alduchov & Eskridge 1996)
 magnus_b_c: 243.04
 past_weather_model: ukmo_uk_deterministic_2km  # Met Office UKV 2 km: Open-Meteo record of what happened
 
-# Farm: 10,000 acres (4,047 ha) around Elveden, Suffolk (the largest farm in lowland Britain).
-# Real field parcels from OpenStreetMap (landuse=farmland, 2 ha and over), the nearest to the yard
-# until they made 10,000 acres, grouped at random (seed 2026) into 8 blocks of nearby parcels, each
-# named after its nearest village. The model treats each block as one field; area_ha is the
-# parcels' measured area. OSM has few of Elveden's own fields, so the blocks reach 10 km out.
-# Outlines (OSM way ids too) in webapp/data/demo_farm.geojson; lat/lon are each block's centre,
-# only used for weather downloads. Crops picked at random.
+# Farm: 10,000 acres (4,046 ha) around Elveden, Suffolk (the largest farm in lowland Britain).
+# 312 real fields (mean 13 ha) traced from the Esri satellite imagery the map shows, skipping land
+# OpenStreetMap marks as forest, heath, grass, airfield or built-up, and checked by eye: the nearest
+# to the yard until they made 10,000 acres. Crops by area: osr 8%, wheat 56%, barley 36%. The model
+# works on 20 single-crop groups of neighbouring fields (2 osr, 11 wheat, 7 barley), each named after
+# the nearest OSM village or farm. Every field: data/fields.csv; outlines (one MultiPolygon per
+# group): webapp/data/demo_farm.geojson. lat/lon are each group's centre, only used for weather
+# downloads.
 fields:
-  - {name: brandon,        crop: barley, area_ha: 279.7, lat: 52.4388, lon: 0.5923}  # 691 acres, 26 parcels
-  - {name: thetford,       crop: wheat,  area_ha: 337.6, lat: 52.4177, lon: 0.7655}  # 834 acres, 32 parcels
-  - {name: eriswell,       crop: osr,    area_ha: 152.9, lat: 52.3850, lon: 0.5438}  # 378 acres, 11 parcels
-  - {name: barnham,        crop: osr,    area_ha: 752.4, lat: 52.3754, lon: 0.7289}  # 1,859 acres, 61 parcels
-  - {name: icklingham,     crop: barley, area_ha: 225.9, lat: 52.3454, lon: 0.5792}  # 558 acres, 19 parcels
-  - {name: culford_heath,  crop: osr,    area_ha: 846.4, lat: 52.3433, lon: 0.7357}  # 2,091 acres, 55 parcels
-  - {name: fakenham_magna, crop: barley, area_ha: 547.8, lat: 52.3473, lon: 0.7856}  # 1,354 acres, 37 parcels
-  - {name: ingham,         crop: osr,    area_ha: 904.0, lat: 52.3142, lon: 0.7194}  # 2,234 acres, 50 parcels
+  - {name: croxton,           crop: wheat,  area_ha: 208.7, lat: 52.4338, lon: 0.7464}  # 516 acres, 20 fields
+  - {name: grange_farm,       crop: wheat,  area_ha: 192.7, lat: 52.4041, lon: 0.7678}  # 476 acres, 18 fields
+  - {name: wangford,          crop: wheat,  area_ha: 217.8, lat: 52.3953, lon: 0.6207}  # 538 acres, 17 fields
+  - {name: elveden,           crop: wheat,  area_ha: 203.6, lat: 52.3893, lon: 0.6719}  # 503 acres, 15 fields
+  - {name: barnham,           crop: barley, area_ha: 221.1, lat: 52.3764, lon: 0.7654}  # 546 acres, 20 fields
+  - {name: holywell_row,      crop: barley, area_ha: 219.0, lat: 52.3749, lon: 0.5815}  # 541 acres, 19 fields
+  - {name: sparks_farm,       crop: barley, area_ha: 188.4, lat: 52.3715, lon: 0.6052}  # 466 acres, 12 fields
+  - {name: chalk_hall_farm,   crop: wheat,  area_ha: 213.2, lat: 52.3741, lon: 0.6370}  # 527 acres, 13 fields
+  - {name: hall_farm,         crop: wheat,  area_ha: 216.9, lat: 52.3660, lon: 0.6951}  # 536 acres, 11 fields
+  - {name: east_farm,         crop: wheat,  area_ha: 197.3, lat: 52.3737, lon: 0.7309}  # 488 acres, 16 fields
+  - {name: eriswell,          crop: wheat,  area_ha: 201.5, lat: 52.3566, lon: 0.5834}  # 498 acres, 18 fields
+  - {name: icklingham,        crop: osr,    area_ha: 139.5, lat: 52.3551, lon: 0.6074}  # 345 acres, 12 fields
+  - {name: wideham_farm,      crop: osr,    area_ha: 184.3, lat: 52.3559, lon: 0.6367}  # 455 acres, 9 fields
+  - {name: olleys_farm,       crop: barley, area_ha: 204.6, lat: 52.3578, lon: 0.7132}  # 506 acres, 17 fields
+  - {name: euston,            crop: barley, area_ha: 213.6, lat: 52.3573, lon: 0.7452}  # 528 acres, 13 fields
+  - {name: highlodge_farm,    crop: barley, area_ha: 208.2, lat: 52.3422, lon: 0.5918}  # 514 acres, 22 fields
+  - {name: troston,           crop: wheat,  area_ha: 208.8, lat: 52.3362, lon: 0.7515}  # 516 acres, 11 fields
+  - {name: bernersfield_farm, crop: barley, area_ha: 202.2, lat: 52.3333, lon: 0.6170}  # 500 acres, 18 fields
+  - {name: culford_heath,     crop: wheat,  area_ha: 203.3, lat: 52.3301, lon: 0.7048}  # 502 acres, 20 fields
+  - {name: nevillehouse_farm, crop: wheat,  area_ha: 201.1, lat: 52.3241, lon: 0.7218}  # 497 acres, 11 fields
 
 # start: depot or a field name. Every combine starts with a full tank. fuel_tank_litres from
 # Ritchie Specs: Claas Tucano 440/450 ~650 l, Tucano 320/430 ~500 l (132 US gal). At
@@ -49,18 +62,30 @@ machines:
   - {name: combine_c, ha_per_hour: 2.0, start: depot, fuel_tank_litres: 500}
 
 # Fields in the order above, then the depot (the yard at Elveden village, 52.383, 0.675).
-# Straight line between block centres x 1.3 for the roads, at 12 mph, to the nearest 0.25 h.
-# Moving between parcels inside a block is free. Rounded up to whole hours.
+# Straight line between group centres x 1.3 for the roads, at 12 mph, to the nearest 0.25 h.
+# Moving between fields inside a group is free. Rounded up to whole hours.
 travel_hours:
-  - [0.00, 0.75, 0.50, 0.75, 0.75, 1.00, 1.00, 1.00, 0.50]
-  - [0.75, 0.00, 1.00, 0.25, 1.00, 0.50, 0.50, 0.75, 0.50]
-  - [0.50, 1.00, 0.00, 0.75, 0.25, 1.00, 1.25, 1.00, 0.50]
-  - [0.75, 0.25, 0.75, 0.00, 0.75, 0.25, 0.25, 0.50, 0.25]
-  - [0.75, 1.00, 0.25, 0.75, 0.00, 0.75, 1.00, 0.75, 0.50]
-  - [1.00, 0.50, 1.00, 0.25, 0.75, 0.00, 0.25, 0.25, 0.50]
-  - [1.00, 0.50, 1.25, 0.25, 1.00, 0.25, 0.00, 0.50, 0.50]
-  - [1.00, 0.75, 1.00, 0.50, 0.75, 0.25, 0.50, 0.00, 0.50]
-  - [0.50, 0.50, 0.50, 0.25, 0.50, 0.50, 0.50, 0.50, 0.00]
+  - [0.00, 0.25, 0.75, 0.50, 0.50, 0.75, 0.75, 0.75, 0.50, 0.50, 1.00, 0.75, 0.75, 0.50, 0.50, 1.00, 0.75, 1.00, 0.75, 0.75, 0.50]
+  - [0.25, 0.00, 0.75, 0.50, 0.25, 1.00, 0.75, 0.75, 0.50, 0.25, 1.00, 0.75, 0.75, 0.50, 0.25, 1.00, 0.50, 0.75, 0.75, 0.75, 0.50]
+  - [0.75, 0.75, 0.00, 0.25, 0.75, 0.25, 0.25, 0.25, 0.50, 0.50, 0.25, 0.25, 0.25, 0.50, 0.75, 0.50, 0.75, 0.50, 0.50, 0.75, 0.25]
+  - [0.50, 0.50, 0.25, 0.00, 0.50, 0.50, 0.25, 0.25, 0.25, 0.25, 0.50, 0.50, 0.25, 0.25, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.00]
+  - [0.50, 0.25, 0.75, 0.50, 0.00, 0.75, 0.75, 0.50, 0.25, 0.25, 0.75, 0.75, 0.50, 0.25, 0.25, 0.75, 0.25, 0.75, 0.50, 0.50, 0.50]
+  - [0.75, 1.00, 0.25, 0.50, 0.75, 0.00, 0.00, 0.25, 0.50, 0.75, 0.25, 0.25, 0.25, 0.50, 0.75, 0.25, 0.75, 0.25, 0.75, 0.75, 0.50]
+  - [0.75, 0.75, 0.25, 0.25, 0.75, 0.00, 0.00, 0.25, 0.50, 0.50, 0.25, 0.00, 0.25, 0.50, 0.75, 0.25, 0.75, 0.25, 0.50, 0.75, 0.25]
+  - [0.75, 0.75, 0.25, 0.25, 0.50, 0.25, 0.25, 0.00, 0.25, 0.50, 0.25, 0.25, 0.25, 0.25, 0.50, 0.25, 0.50, 0.25, 0.50, 0.50, 0.25]
+  - [0.50, 0.50, 0.50, 0.25, 0.25, 0.50, 0.50, 0.25, 0.00, 0.25, 0.50, 0.50, 0.25, 0.00, 0.25, 0.50, 0.25, 0.50, 0.25, 0.25, 0.25]
+  - [0.50, 0.25, 0.50, 0.25, 0.25, 0.75, 0.50, 0.50, 0.25, 0.00, 0.75, 0.50, 0.50, 0.25, 0.25, 0.75, 0.25, 0.50, 0.25, 0.25, 0.25]
+  - [1.00, 1.00, 0.25, 0.50, 0.75, 0.25, 0.25, 0.25, 0.50, 0.75, 0.00, 0.00, 0.25, 0.50, 0.75, 0.00, 0.75, 0.25, 0.50, 0.75, 0.50]
+  - [0.75, 0.75, 0.25, 0.50, 0.75, 0.25, 0.00, 0.25, 0.50, 0.50, 0.00, 0.00, 0.25, 0.50, 0.75, 0.00, 0.75, 0.25, 0.50, 0.50, 0.25]
+  - [0.75, 0.75, 0.25, 0.25, 0.50, 0.25, 0.25, 0.25, 0.25, 0.50, 0.25, 0.25, 0.00, 0.25, 0.50, 0.25, 0.50, 0.25, 0.25, 0.50, 0.25]
+  - [0.50, 0.50, 0.50, 0.25, 0.25, 0.50, 0.50, 0.25, 0.00, 0.25, 0.50, 0.50, 0.25, 0.00, 0.25, 0.50, 0.25, 0.50, 0.25, 0.25, 0.25]
+  - [0.50, 0.25, 0.75, 0.50, 0.25, 0.75, 0.75, 0.50, 0.25, 0.25, 0.75, 0.75, 0.50, 0.25, 0.00, 0.75, 0.25, 0.50, 0.25, 0.25, 0.25]
+  - [1.00, 1.00, 0.50, 0.50, 0.75, 0.25, 0.25, 0.25, 0.50, 0.75, 0.00, 0.00, 0.25, 0.50, 0.75, 0.00, 0.75, 0.25, 0.50, 0.50, 0.50]
+  - [0.75, 0.50, 0.75, 0.50, 0.25, 0.75, 0.75, 0.50, 0.25, 0.25, 0.75, 0.75, 0.50, 0.25, 0.25, 0.75, 0.00, 0.50, 0.25, 0.25, 0.50]
+  - [1.00, 0.75, 0.50, 0.50, 0.75, 0.25, 0.25, 0.25, 0.50, 0.50, 0.25, 0.25, 0.25, 0.50, 0.50, 0.25, 0.50, 0.00, 0.50, 0.50, 0.50]
+  - [0.75, 0.75, 0.50, 0.50, 0.50, 0.75, 0.50, 0.50, 0.25, 0.25, 0.50, 0.50, 0.25, 0.25, 0.25, 0.50, 0.25, 0.50, 0.00, 0.00, 0.50]
+  - [0.75, 0.75, 0.75, 0.50, 0.50, 0.75, 0.75, 0.50, 0.25, 0.25, 0.75, 0.50, 0.50, 0.25, 0.25, 0.50, 0.25, 0.50, 0.00, 0.00, 0.50]
+  - [0.50, 0.50, 0.25, 0.00, 0.50, 0.50, 0.25, 0.25, 0.25, 0.25, 0.50, 0.25, 0.25, 0.25, 0.25, 0.50, 0.50, 0.50, 0.50, 0.50, 0.00]
 
 crops:
   wheat:

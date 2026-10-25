@@ -19,7 +19,7 @@
         <section class="section">
           <div class="section-head"><h2>Fields</h2><span class="num muted" id="harvested"></span></div>
           <table class="data">
-            <thead><tr><th>Field</th><th class="wide">Crop</th><th class="r wide">Area</th><th>Cut</th><th class="r">Moisture</th><th>Status</th><th>Best time</th></tr></thead>
+            <thead><tr><th>Field</th><th class="wide">Crop</th><th class="r wide">Area</th><th>Cut</th><th class="r">Moisture</th><th>Status</th><th>Combine</th><th class="wide">Best time</th></tr></thead>
             <tbody id="fields"></tbody>
           </table>
         </section>
@@ -46,6 +46,19 @@
         </section>
       </aside>
     </div>
+
+    <section class="section">
+      <div class="section-head"><h2>Worth per hectare, hour by hour</h2><span class="num muted" id="plan-made"></span></div>
+      <div class="chart-box" id="worth-chart"></div>
+      <p class="key" id="worth-key"></p>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><h2>Where the combines go</h2><span class="num muted">so far, then the plan</span></div>
+      <div class="chart-box" id="route-chart"></div>
+      <p class="key"><span class="swatch cutting"></span>cutting <span class="swatch road"></span>on the road
+        <span class="swatch blank"></span>waiting · blank: at the yard · dashed: the plan ahead</p>
+    </section>
   </main>
 </body>
 </html>

@@ -2,6 +2,7 @@
 // (no key). Kept in sessionStorage for site.cache_minutes so pages don't ask again and again.
 
 const OPEN_METEO = "https://api.open-meteo.com/v1/forecast";
+const HISTORICAL = "https://historical-forecast-api.open-meteo.com/v1/forecast";
 const RAINVIEWER = "https://api.rainviewer.com/public/weather-maps.json";
 
 async function cached(key, minutes, fetcher) {
@@ -22,20 +23,46 @@ async function getJSON(url) {
   return response.json();
 }
 
+// A demo replaying a past week (farm.week, from source.py) shows that week's weather: the record of
+// the model its real weather comes from, on those days, at today's time of day. The record has no
+// chance of rain, so that comes from the demo's own forecast. Live radar has no past, so pages hide it.
+let dayShift = 0; // days from today to the date shown: 0 live, negative for a past week
+function source(farm) {
+  dayShift = farm.week?.day_shift_days ?? 0;
+  const week = farm.week;
+  if (!week) return { base: OPEN_METEO, span: null, key: "live" };
+  return { base: HISTORICAL, span: `&start_date=${week.start_date}&end_date=${week.end_date}&models=${week.model}`, key: week.start_date };
+}
+
+// fill the chance of rain the archive lacks: hourly from the demo's forecast, daily the highest hour
+function addRainChance(data, chance) {
+  data.hourly.precipitation_probability = data.hourly.time.map((time) => chance[time] ?? null);
+  data.daily.precipitation_probability_max = data.daily.time.map((day) => {
+    const hours = data.hourly.time.filter((time) => time.startsWith(day) && chance[time] !== undefined);
+    return hours.length ? Math.max(...hours.map((time) => chance[time])) : null;
+  });
+  return data;
+}
+
 // The forecast at the farm: hourly for the next days and a daily summary.
 export function farmForecast(farm) {
+  const { base, span, key } = source(farm);
   const [lat, lng] = farm.centre;
   const url =
-    `${OPEN_METEO}?latitude=${lat}&longitude=${lng}&timezone=Europe%2FLondon&forecast_days=${farm.site.forecast_days}` +
+    `${base}?latitude=${lat}&longitude=${lng}&timezone=Europe%2FLondon${span ?? `&forecast_days=${farm.site.forecast_days}`}` +
     "&hourly=temperature_2m,precipitation,precipitation_probability,relative_humidity_2m,wind_speed_10m,wind_direction_10m,weather_code" +
     "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max";
-  return cached("weather-farm", farm.site.cache_minutes, () => getJSON(url));
+  return cached(`weather-farm-${key}`, farm.site.cache_minutes, async () => {
+    const data = await getJSON(url);
+    return farm.week ? addRainChance(data, farm.week.rain_chance_pct) : data;
+  });
 }
 
 // The forecast on a grid of points around the farm, for drawing weather maps.
 // returns {n, lats [n] north to south, lngs [n] west to east, times [hour], values: {name: [point][hour]}}
 export function gridForecast(farm) {
   const { grid_points: n, grid_km: km, forecast_hours: hours } = farm.site;
+  const { base, span, key } = source(farm);
   const [lat0, lng0] = farm.centre;
   const dLat = km / 111 / (n - 1);
   const dLng = km / (111 * Math.cos((lat0 * Math.PI) / 180)) / (n - 1);
@@ -44,9 +71,9 @@ export function gridForecast(farm) {
   const points = lats.flatMap((lat) => lngs.map((lng) => [lat, lng])); // row by row, north first
   const names = ["precipitation", "temperature_2m", "wind_speed_10m", "wind_direction_10m", "cloud_cover"];
   const url =
-    `${OPEN_METEO}?latitude=${points.map((p) => p[0]).join(",")}&longitude=${points.map((p) => p[1]).join(",")}` +
-    `&hourly=${names.join(",")}&forecast_hours=${hours}&timezone=Europe%2FLondon`;
-  return cached("weather-grid", farm.site.cache_minutes, async () => {
+    `${base}?latitude=${points.map((p) => p[0]).join(",")}&longitude=${points.map((p) => p[1]).join(",")}` +
+    `&hourly=${names.join(",")}${span ?? `&forecast_hours=${hours}`}&timezone=Europe%2FLondon`;
+  return cached(`weather-grid-${key}`, farm.site.cache_minutes, async () => {
     const answers = await getJSON(url); // one answer per point, in the order asked
     const values = Object.fromEntries(names.map((name) => [name, answers.map((a) => a.hourly[name])]));
     return { n, lats, lngs, times: answers[0].hourly.time, values };
@@ -62,11 +89,13 @@ export async function radarFrames() {
   }));
 }
 
-// The index of the current hour in an Open-Meteo hourly time list (local times, "2026-10-25T14:00")
+// The index of the current hour in an Open-Meteo hourly time list (local times, "2026-10-25T14:00").
+// For a past week: the same time of day, dayShift calendar days away (so summer time doesn't shift it)
 export function nowIndex(times) {
-  const now = new Date();
-  const local = new Date(now.toLocaleString("en-US", { timeZone: "Europe/London" }));
-  const key = `${local.getFullYear()}-${String(local.getMonth() + 1).padStart(2, "0")}-${String(local.getDate()).padStart(2, "0")}T${String(local.getHours()).padStart(2, "0")}:00`;
+  const local = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/London" })); // wall clock
+  const day = new Date(Date.UTC(local.getFullYear(), local.getMonth(), local.getDate() + dayShift));
+  const pad = (n) => String(n).padStart(2, "0");
+  const key = `${day.getUTCFullYear()}-${pad(day.getUTCMonth() + 1)}-${pad(day.getUTCDate())}T${pad(local.getHours())}:00`;
   return Math.max(0, times.indexOf(key));
 }
 

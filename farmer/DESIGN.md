@@ -16,7 +16,12 @@ What changes for farmers:
 | done | hollow `--done` | all cut |
 
 These four colours are only for field status (and the matching good / fair / poor hours on the
-Weather page). Weather maps keep their own colour scales because they are data, always with a legend.
+Weather page).
+
+## Crop: the field's outline colour, and a short bar next to its word
+Wheat, barley and OSR use the demo's crop colours (`--wheat`, `--barley`, `--osr`): the outline of
+every field on the map, and a short bar (never a square, so it isn't read as a lamp) before the
+crop's word in keys and tables. Weather maps keep their own colour scales because they are data, always with a legend.
 
 ## Few words, big answers
 - Each page opens with one sentence that answers the question, e.g. "Cut today." then one line of

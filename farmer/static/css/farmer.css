@@ -62,6 +62,27 @@ table.data { width: 100%; border-collapse: collapse; font-size: 14px; }
 .lamp.soon { background: var(--soon); }
 .lamp.wait { background: var(--wait); }
 .lamp.done { border: 1px solid var(--done); }
+
+/* crop: a short bar in the field-outline colour, always next to its word (a bar, not a lamp) */
+.crop-line { display: inline-block; width: 16px; height: 4px; margin-right: 6px; vertical-align: 3px; border: 1px solid var(--ink-2); }
+.crop-wheat { background: var(--wheat); }
+.crop-barley { background: var(--barley); }
+.crop-osr { background: var(--osr); }
+.crop-key { display: flex; gap: 16px; padding-left: 16px; border-left: 1px solid var(--rule); }
+
+/* Today's plan charts (static/js/plan-charts.js): plain SVG on one hour axis */
+.chart-box { overflow-x: auto; margin-top: 8px; }
+.chart text { font: 11px var(--font-data); font-variant-numeric: tabular-nums; fill: var(--ink-2); }
+.chart .row-name { font: 13px var(--font-text); fill: var(--ink); }
+.chart .row-end { fill: var(--ink); }
+.chart .letter { font-weight: 500; fill: var(--ink); }
+.chart .stretch { fill: var(--ink); }
+.key { font: 12px var(--font-data); color: var(--ink-2); margin: 6px 0 0; }
+.key .swatch { display: inline-block; width: 12px; height: 10px; margin: 0 4px 0 10px; vertical-align: -1px; }
+.key .swatch:first-child { margin-left: 0; }
+.key .swatch.blank { background: var(--paper); border: 1px solid var(--rule); }
+.key .swatch.cutting { background: var(--straw); }
+.key .swatch.road { background: var(--soil); }
 .cutbar { display: inline-block; width: 64px; height: 6px; background: var(--rule); margin-left: 10px; vertical-align: 1px; }
 .cutbar span { display: block; height: 100%; background: var(--soil); }
 

@@ -9,10 +9,7 @@ const clock = makeClock(farm);
 topbar(farm, "control.html", clock);
 
 const fieldOptions = farm.fields.map((field, f) => `<option value="${f}">${field.label}</option>`).join("");
-const isNight = (hour) => {
-  const clockHour = Number(season.labels[hour].slice(-5, -3));
-  return clockHour >= 17 || clockHour < 7;
-};
+const isNight = (hour) => season.night[hour]; // the demo's night_hours, for the work lights
 
 function showVerdict(hour) {
   const doing = farm.machines.map((_, m) => season.activity[m][hour]);

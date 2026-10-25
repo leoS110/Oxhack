@@ -4,6 +4,7 @@
 import { getJSON } from "./api.js";
 import { drawDecisionMap, drawHumidity, drawMoisture, drawRain, layerSteps, layerValue, valueColour } from "./charts.js";
 import { createMap, cutShare } from "./map.js";
+import { cropWord, crops } from "./theme.js";
 
 const $ = (id) => document.getElementById(id);
 const money = (gbp) => `£${Math.round(gbp).toLocaleString("en-GB")}`;
@@ -124,14 +125,33 @@ async function main() {
     drawMoisture($("moisture-chart"), farm, plan, selectedField, hour, planNow, height - Math.round(0.24 * height) - Math.round(0.28 * height) - 4);
   }
 
-  setTime(Number(options.get("t")) || 0); // ?t=30 opens at hour 30
+  // opens at the hour it is now (the demo runs in real time); ?t=30 opens at hour 30 instead
+  const realHour = (Date.now() - Date.parse(plan.clock_start_utc)) / 3.6e6;
+  setTime(options.has("t") ? Number(options.get("t")) : Math.max(0, Math.min(realHour, plan.hours)));
 }
 
 function fillStaticText(farm, plan) {
   $("farm-name").textContent = farm.farm_name;
-  $("forecast-info").textContent = `Met Office UK ensemble forecast, ${plan.forecast.members} members, from ${plan.forecast.start}`;
-  const values = { ...plan.limits, members: plan.forecast.members };
+  $("forecast-info").textContent = `${plan.forecast.forecast}, ${plan.forecast.members} members, from ${plan.forecast.start}`;
+  const values = {
+    ...plan.limits,
+    members: plan.forecast.members,
+    forecast_name: plan.forecast.forecast,
+    truth: plan.forecast.truth,
+    credit: plan.forecast.credit,
+    fields: farm.fields.length,
+    real_fields: farm.fields.reduce((sum, field) => sum + field.outline.length, 0), // one outline each
+    total_ha: Math.round(farm.fields.reduce((sum, field) => sum + field.area_ha, 0)).toLocaleString("en-GB"),
+  };
   document.querySelectorAll("[data-fill]").forEach((span) => (span.textContent = values[span.dataset.fill]));
+  // the map key for the outline colours: each crop and how much of it there is
+  const cropHa = (crop) => farm.fields.filter((field) => field.crop === crop).reduce((sum, field) => sum + field.area_ha, 0);
+  $("crop-key").innerHTML =
+    "outline: " +
+    Object.keys(crops)
+      .filter((crop) => cropHa(crop) > 0)
+      .map((crop) => `<span class="crop-line crop-${crop}"></span>${cropWord(crop)} <span class="num">${Math.round(cropHa(crop)).toLocaleString("en-GB")} ha</span>`)
+      .join(" ");
 }
 
 // a field's value this hour in words, for its label on the map
@@ -193,6 +213,6 @@ function showFieldSummary(farm, plan, f, hour) {
   const cutPct = Math.round(100 * cutShare(plan, field, f, hour));
   $("field-title").textContent = field.label;
   $("field-summary").textContent =
-    `${field.crop} · ${field.area_ha} ha · ${cutPct}% cut · ` +
+    `${cropWord(field.crop)} · ${field.area_ha} ha · ${cutPct}% cut · ` +
     `meter ${plan.true_moisture_pct[f][readingHour].toFixed(1)}% at ${plan.labels[readingHour].slice(-5)}`;
 }

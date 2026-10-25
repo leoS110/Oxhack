@@ -46,19 +46,30 @@ skip a field, combine unavailable until..., enter a meter reading), with a previ
 | `static/` | `panel.html`, `css/` (tokens + layout), `js/` (map, charts, panel), fonts, favicon |
 | `DESIGN.md` | **design rules for everything in `static/`: read before changing a page** |
 
+## The demo's week
+
+`season_start` in `demo.yaml` picks it. A date (e.g. `"2024-06-09"`) replays that week as
+`replay.py` does: the ECMWF ensemble forecasts as issued then, and the weather that really
+followed (`harvest/past_data.py`; the first start downloads them into `data/`, after that it runs
+offline). Empty: today's forecast, `data/forecast.csv`, one member playing the real weather, as
+`run.py` does. Either way the panel opens at the hour it is now: a past week is played on today's
+date, from today's time of day (`bridge.clock_start`). The tests always use today's forecast, so
+they never go online (`tests/conftest.py`).
+
 ## The demo farm
 
-`data/demo_farm.geojson` has one MultiPolygon per field and a point for the yard. A field is a
-block of real parcels (OpenStreetMap `landuse=farmland` around Elveden, Suffolk; their way ids are in
-`"osm_ways"`), listed in the order a combine works them. Each feature has `"name"` (the field's name
-in `params.yaml`, which links them) and `"label"` (what the farmer sees). To redraw them, open the
+`data/demo_farm.geojson` has one MultiPolygon per field and a point for the yard. A field in the
+model is a group of real fields around Elveden, Suffolk, traced from the Esri imagery the map shows
+(one polygon each, listed in the order a combine works them; their ids, matching
+`../data/fields.csv`, are in `"fields"`). Each feature has `"name"` (the field's name in
+`params.yaml`, which links them), `"label"` (what the farmer sees) and `"crop"`. To redraw them, open the
 file at [geojson.io](https://geojson.io), move the corners onto the hedgerows, keep the properties,
 and save it back. The model still uses `area_ha` and `travel_hours` from `params.yaml`, not the
 drawn shapes.
 
 ## API
 
-`GET /api/farm`: `fields` (label, crop, area, outline `[parcel][ring][corner][lat, lng]`, passes as
+`GET /api/farm`: `fields` (label, crop, area, `centre` `[lat, lng]`, outline `[parcel][ring][corner][lat, lng]`, passes as
 `[lat, lng]` and `parcel_starts`, where each parcel's passes begin), `yard`, `machines`, `map` settings.
 
 `GET /api/plan`: for every hour: `labels`, `activity` and `place` `[machine][hour]`, `cards`

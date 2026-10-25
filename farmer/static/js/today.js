@@ -1,7 +1,8 @@
-// Today: one sentence that answers "should I cut?", then the fields, the combines and the real
-// weather at the farm.
+// Today: one sentence that answers "should I cut?", then the fields (with which combine the plan
+// sends there and when), the combines, the real weather at the farm, and two charts of the plan.
 
-import { $, ACTIVITY, everySecond, lamp, load, makeClock, showAlerts, topbar } from "./common.js";
+import { $, ACTIVITY, crop, everySecond, lamp, load, makeClock, showAlerts, topbar } from "./common.js";
+import { drawRoutes, drawWorth, worthShades, worthSteps } from "./plan-charts.js";
 import { farmForecast, nowIndex, weatherWord } from "./weather-data.js";
 
 const { farm, season } = await load();
@@ -18,12 +19,16 @@ farmForecast(farm)
   })
   .catch(() => ($("#now-weather").innerHTML = `<p class="muted">Forecast unavailable.</p>`));
 
+let shownHour = Math.floor(clock()); // declared before everySecond, which calls showHour at once
 everySecond(clock, season, { hour: showHour });
+addEventListener("resize", () => showCharts(shownHour));
 
 function showHour(hour) {
+  shownHour = hour;
   showVerdict(hour);
   showFields(hour);
   showCombines(hour);
+  showCharts(hour);
   $("#harvested").textContent = `${season.harvested_ha[hour]} of ${totalHa} ha cut`;
   const rain = rainSentence();
   showAlerts(farm, season, hour, rain && !rain.startsWith("Dry for") ? [rain] : []);
@@ -77,14 +82,29 @@ function showFields(hour) {
       const best = season.best[f][hour];
       return `<tr class="link" data-href="map.html#field-${f}">
         <td class="name">${field.label}</td>
-        <td class="wide">${field.crop}</td>
+        <td class="wide">${crop(field.crop)}</td>
         <td class="r wide">${field.area_ha} ha</td>
         <td>${String(cut).padStart(3, " ")}%<span class="cutbar"><span style="width:${cut}%"></span></span></td>
         <td class="r">${status === "done" ? "" : `${season.moisture_pct[f][hour].toFixed(1)}%`}</td>
         <td>${lamp(status)}</td>
-        <td>${status === "done" ? "" : (best ?? "none in view")}</td></tr>`;
+        <td>${status === "done" ? "done" : (season.planned[f][hour] ?? "not this week")}</td>
+        <td class="wide">${status === "done" ? "" : (best ?? "none in view")}</td></tr>`;
     })
     .join("");
+}
+
+// the plan in force, as two charts on one hour axis
+function showCharts(hour) {
+  const p = season.plans.filter((plan) => plan.hour <= hour).at(-1);
+  $("#plan-made").textContent = `plan of ${season.labels[p.hour].slice(0, 3)} ${season.labels[p.hour].slice(-5)}`;
+  drawWorth($("#worth-chart"), farm, season, hour);
+  drawRoutes($("#route-chart"), farm, season, hour);
+  const shades = worthShades();
+  $("#worth-key").innerHTML =
+    worthSteps(season)
+      .map((low, i) => `<span class="swatch" style="background:${shades[i]}"></span>£${low.toLocaleString("en-GB")}+`)
+      .join(" ") +
+    ` <span class="swatch blank"></span>can't be cut · box: where the plan sends a combine · bar: cut so far · pale: before now`;
 }
 
 function showCombines(hour) {

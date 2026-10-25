@@ -14,4 +14,13 @@ export const colours = {
   alarm: token("alarm"),
 };
 
+// crop (params.yaml name) -> the word a farmer uses and its outline colour on the map
+export const crops = {
+  wheat: { word: "wheat", colour: token("wheat") },
+  barley: { word: "barley", colour: token("barley") },
+  osr: { word: "OSR", colour: token("osr") },
+};
+export const cropWord = (crop) => crops[crop]?.word ?? crop;
+export const cropColour = (crop) => crops[crop]?.colour ?? colours.paper;
+
 export const dataFont = token("font-data");

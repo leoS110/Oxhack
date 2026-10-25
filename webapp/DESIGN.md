@@ -8,7 +8,9 @@ landing page.
 - Colours only from `css/tokens.css`. Each colour means one thing:
   paper → straw → soil = what cutting is worth (the decision map's steps, also on the map's
   fields); pale paper on the map = already cut; rain = rain; alarm = too wet or value lost;
-  ink / ink-2 = text; rule = hairlines. No Tailwind palette colours (indigo, violet, slate...).
+  ink / ink-2 = text; rule = hairlines; wheat / barley / osr = the crop, only as a field's outline
+  on a map and as a short bar next to the crop's word in keys and tables. No Tailwind palette
+  colours (indigo, violet, slate...).
 - No gradients, glows, blur, glassmorphism or box-shadows. Corner radius 0-2px.
 - Separate content with 1px rules (`var(--rule)`) and space, not cards with shadows.
 - Newsreader for text; IBM Plex Mono with `tabular-nums` for every number and time. Never Inter.

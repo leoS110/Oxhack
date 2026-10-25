@@ -9,6 +9,10 @@ export const ACTIVITY = { cutting: "cutting", driving: "on the road", waiting: "
 // a status lamp and its word: "ready", "soon", "wait", "done"
 export const lamp = (status) => `<span class="lamp ${status}"></span>${status}`;
 
+// a crop in farmer words, after a bar in its outline colour on the map: "wheat", "barley", "OSR"
+export const cropWord = (name) => (name === "osr" ? "OSR" : name);
+export const crop = (name) => `<span class="crop-line crop-${name}"></span>${cropWord(name)}`;
+
 export async function load() {
   const get = async (url) => {
     const response = await fetch(url);

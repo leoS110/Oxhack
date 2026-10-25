@@ -1,7 +1,7 @@
 // The satellite map: field outlines, the cut area growing pass by pass, and the combines moving.
 // Positions come from the server (webapp/tracks.py); here we only draw them.
 
-import { colours } from "./theme.js";
+import { colours, cropColour, cropWord } from "./theme.js";
 
 const EARTH_CIRCUMFERENCE_M = 40075016.686; // at the equator, as used by web map tiles
 
@@ -9,8 +9,9 @@ export function createMap(element, farm, plan, onSelectField) {
   const map = L.map(element, { zoomSnap: 0.25, scrollWheelZoom: false });
   L.tileLayer(farm.map.tiles_url, { attribution: farm.map.attribution, maxZoom: 19 }).addTo(map);
 
+  // outline colour = crop (rain and too wet take it over while they last); fill = what cutting is worth
   const outlines = farm.fields.map((field, f) =>
-    L.polygon(field.outline, { color: colours.paper, weight: 1.5, fillOpacity: 0 })
+    L.polygon(field.outline, { color: cropColour(field.crop), weight: 2, fillOpacity: 0 })
       .bindTooltip("", { direction: "center", className: "field-tag" })
       .on("click", () => onSelectField(f))
       .addTo(map),
@@ -66,14 +67,14 @@ export function createMap(element, farm, plan, onSelectField) {
       const tooWet = plan.true_moisture_pct[f][hour] > plan.limits.too_wet_pct;
       const cutPct = Math.round(100 * cutShare(plan, field, f, hour));
       outlines[f].setStyle({
-        color: raining ? colours.rain : tooWet ? colours.alarm : colours.paper,
+        color: raining ? colours.rain : tooWet ? colours.alarm : cropColour(field.crop),
         dashArray: raining ? "6 4" : null,
-        weight: f === selectedField ? 3.5 : raining || tooWet ? 2.5 : 1.5,
+        weight: f === selectedField ? 3.5 : raining || tooWet ? 2.5 : 2,
         fillColor: fieldNow(f).colour ?? colours.paper,
         fillOpacity: fieldNow(f).colour ? 0.6 : 0,
       });
       const state = cutPct >= 100 ? "all cut" : raining ? "raining" : tooWet ? "too wet" : fieldNow(f).text;
-      outlines[f].setTooltipContent(`${field.short} · ${state}`);
+      outlines[f].setTooltipContent(`${field.short} · ${cropWord(field.crop)} · ${state}`);
       outlines[f].getTooltip().options.permanent = f === selectedField; // one label; the rest on hover
       if (f === selectedField) outlines[f].openTooltip();
       else outlines[f].closeTooltip();
