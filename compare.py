@@ -46,7 +46,7 @@ def main():
     results = {}
     for name, function in PLANNERS.items():
         print(f"running {name}...")
-        results[name] = run_with_forecasts(truth, get_forecast, params, function)
+        results[name] = run_with_forecasts(truth, get_forecast, params, function, first_hour.hour)
     new_runs = list(runs_used)  # season hours a new forecast run came in
 
     print()
@@ -62,8 +62,11 @@ def main():
 
 
 def print_comparison(results, params):
-    """One row per planner, best net first. Hours are added up over all the machines."""
-    columns = ["GBP net", "GBP earned", "GBP costs", "ha left", "driving h", "waiting h", "depot h"]
+    """One row per planner, best net first. Hours are added up over all the machines.
+    "vs farmer" is how much more net £ than plan_farmer, the baseline without our forecasts."""
+    columns = ["GBP net", "vs farmer", "GBP earned", "GBP costs", "ha left"]
+    columns += ["driving h", "waiting h", "depot h"]
+    farmer_net = results["farmer"]["net_gbp"] if "farmer" in results else np.nan
     print(f"{'planner':<34}" + "".join(f"{column:>11}" for column in columns))
     for name in sorted(results, key=lambda name: -results[name]["net_gbp"]):
         result = results[name]
@@ -71,10 +74,12 @@ def print_comparison(results, params):
         doing = activities(
             result["cut_ha"], result["driving"], result["place"], len(params["fields"])
         )
-        money = [result["net_gbp"], result["total_gbp"], result["running_cost_gbp"].sum()]
+        money = [result["total_gbp"], result["running_cost_gbp"].sum()]
         hours = [doing[activity].sum() for activity in ("driving", "waiting", "depot")]
         print(
             f"{name:<34}"
+            + f"{result['net_gbp']:>11,.0f}"
+            + f"{result['net_gbp'] - farmer_net:>+11,.0f}"
             + "".join(f"{gbp:>11,.0f}" for gbp in money)
             + f"{result['remaining_ha'].sum():>11.1f}"
             + "".join(f"{hour:>11}" for hour in hours)

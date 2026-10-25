@@ -88,10 +88,12 @@ short README on the method:
 | `greedy.py` | `plan_vgreedy`, `plan_urgencygreedy`, `plan_urgencygreedy_withlookahead` | `README_greedy.md` |
 | `lagrangian.py` | `plan_lagrangian` | `README_lagrangian.md` |
 | `mpc.py` | `plan_mpc` | `README_mpc.md` |
+| `farmer.py` | `plan_farmer` | `README_farmer.md`: the baseline, a farmer's 12-hour day decided each morning from the moisture reading and a look at the rain forecast |
 
-Every planner except `plan_mpc` ends with `send_idle_to_depot` (`common.py`): a combine with a
-gap in cutting waits at the depot when that costs less than standing in a field (costs in
-`params.yaml`, `depot_when_idle: false` to switch it off). `plan_mpc` weighs the same costs itself.
+Every planner except `plan_mpc` and `plan_farmer` ends with `send_idle_to_depot` (`common.py`): a
+combine with a gap in cutting waits at the depot when that costs less than standing in a field
+(costs in `params.yaml`, `depot_when_idle: false` to switch it off). `plan_mpc` weighs the same
+costs itself; `plan_farmer` goes home every night, on wet days, and when nothing is fit to cut.
 
 `from harvest.planners import plan_mpc` works for any of them. A new planner goes in its own file
 and in `__all__` in `planners/__init__.py`, which is what `compare.py` runs. Every planner has the
@@ -104,6 +106,9 @@ same inputs and outputs:
 | in | `state["machine_at"]` | `[K]` int | where each machine is: field index `0..F-1`, or `F` = depot |
 | in | `state["value_by_member"]` | `[M, F, H]` | optional: £/ha in each forecast member (`value` is their average). `simulate.py` passes it; only `plan_mpc` uses it |
 | in | `state["fuel_litres"]` | `[K]` | optional: diesel left in each combine's tank, telemetry from the simulator (tank sizes: `fuel_tank_litres` under `machines`). `simulate.py` passes it; no planner uses it yet |
+| in | `state["moisture_pct"]` | `[F]` | optional: the latest grain moisture reading of each field, %. `simulate.py` passes it; only `plan_farmer` uses it (and needs it) |
+| in | `state["hour_of_day"]` | int | optional: hour of the day (UTC, 0-23) of the plan's first column. `simulate.py` passes it; only `plan_farmer` uses it (and needs it) |
+| in | `state["rain_mm"]` | `[M, F, H]` | optional: the forecast's rain for the plan hours, mm. `simulate.py` passes it; only `plan_farmer` uses it (and needs it) |
 | out | `schedule` | `[K, H]` int | field index each machine should work on each hour, `F` = go to the depot, or `-1` = wait where it is |
 
 The planner only says where machines should be. Driving time, harvesting and fuel happen in the
@@ -117,8 +122,10 @@ Two ways in, with the same result:
 - **`run_season(weather, params, planner=plan_urgencygreedy)`**: one forecast that never changes
   (`run.py`). It holds back forecast member `truth_member` as "the weather that
   really happens"; the planner never sees it. The season is `season_hours` long.
-- **`run_with_forecasts(truth, get_forecast, params, planner=plan_urgencygreedy)`**: the forecast
-  is updated as the season goes (`replay.py`, `compare.py`, with `past_data.past_rollout`).
+- **`run_with_forecasts(truth, get_forecast, params, planner=plan_urgencygreedy, start_hour_utc=0)`**:
+  the forecast is updated as the season goes (`replay.py`, `compare.py`, with
+  `past_data.past_rollout`). `start_hour_utc` is the hour of the day of season hour 0, so planners
+  can tell the time (`state["hour_of_day"]`); `run_season` takes it from `forecast_start`.
 
 | | Name | Type / shape | Meaning |
 |---|---|---|---|

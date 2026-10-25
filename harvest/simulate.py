@@ -18,6 +18,7 @@ Two ways in:
 """
 
 import numpy as np
+import pandas as pd
 
 from harvest.planners import WAIT, plan_urgencygreedy
 from harvest.value import field_values, member_values, predict_moisture, start_moisture
@@ -43,19 +44,21 @@ def run_season(weather, params, planner=plan_urgencygreedy):  # choose which pla
     def get_forecast(hour):  # the same forecast every time, from that hour on
         return {name: values[:, :, hour:] for name, values in forecast.items()}
 
-    return run_with_forecasts(truth, get_forecast, params, planner)
+    start_hour_utc = pd.Timestamp(params["forecast_start"]).hour  # the CSV's first hour
+    return run_with_forecasts(truth, get_forecast, params, planner, start_hour_utc)
 
 
-def run_with_forecasts(truth, get_forecast, params, planner=plan_urgencygreedy):
+def run_with_forecasts(truth, get_forecast, params, planner=plan_urgencygreedy, start_hour_utc=0):
     """Simulate a season in which the forecast gets updated as time goes on.
 
-    truth:        {name: [1, field, hour]}  the weather that really happens, one column per hour
-                  of the season (the season is as long as this)
-    get_forecast: function(hour) -> {name: [member, field, hour]}  the newest forecast at that
-                  season hour, its first column being that hour. Called every
-                  forecast_every_hours; it must cover at least plan_hours + forecast_every_hours
-    params:       settings from params.yaml
-    planner:      function(value, state, params) -> schedule [machine, hour]
+    truth:          {name: [1, field, hour]}  the weather that really happens, one column per hour
+                    of the season (the season is as long as this)
+    get_forecast:   function(hour) -> {name: [member, field, hour]}  the newest forecast at that
+                    season hour, its first column being that hour. Called every
+                    forecast_every_hours; it must cover at least plan_hours + forecast_every_hours
+    params:         settings from params.yaml
+    planner:        function(value, state, params) -> schedule [machine, hour]
+    start_hour_utc: int, hour of the day (UTC) of season hour 0, so planners can tell the time
     returns: {
         "total_gbp":    float            money earned
         "earned_gbp":   [hour]           money earned in each hour
@@ -120,6 +123,10 @@ def run_with_forecasts(truth, get_forecast, params, planner=plan_urgencygreedy):
                 "machine_at": machine_at.copy(),
                 "value_by_member": by_member,  # optional extra; only plan_mpc uses it
                 "fuel_litres": fuel.copy(),  # telemetry from the tanks; no planner uses it yet
+                # only plan_farmer uses these three
+                "moisture_pct": reading.copy(),  # latest sensor reading
+                "hour_of_day": (start_hour_utc + hour) % 24,  # UTC, of plan column 0
+                "rain_mm": upcoming["rain_mm"],  # [member, field, plan_hour] forecast rain
             }
             schedule = planner(value, state, params)  # [machine, plan_hour] field index or WAIT
             plans.append({"hour": hour, "value": value, "schedule": schedule})

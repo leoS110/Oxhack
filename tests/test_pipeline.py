@@ -8,7 +8,7 @@ import yaml
 
 from harvest import planners
 from harvest.forecast import load_forecast, load_moisture
-from harvest.planners import WAIT, plan_lagrangian, plan_mpc, plan_vgreedy
+from harvest.planners import WAIT, plan_farmer, plan_lagrangian, plan_mpc, plan_vgreedy
 from harvest.planners.common import follow_plan, send_idle_to_depot
 from harvest.planners.lagrangian import field_alone, machine_prices
 from harvest.simulate import run_season, run_with_forecasts
@@ -634,6 +634,75 @@ def test_depot_visits_never_change_which_hours_are_cut():
     assert (
         depot_visits > 0
     )  # the pass did something on the demo, so the checks above mean something
+
+
+def farmer_farm(area_ha, day_hours, plan_hours):
+    """one_combine_farm with a farmer's day starting at hour 0 (UTC) and fit up to 18% wheat."""
+    params = one_combine_farm(len(area_ha), area_ha, start="depot")
+    params.update(
+        farmer_day_start_hour=0,
+        farmer_day_hours=day_hours,
+        farmer_fit_above_target_pct=4,
+        farmer_max_wet_hours=4,
+    )
+    value = np.full((len(area_ha), plan_hours), 50.0)  # [field, hour], ignored by the farmer
+    return params, value
+
+
+def test_farmer_picks_fields_by_feel_and_is_home_by_the_end_of_the_day():
+    """An 8-hour day. Field 0 (20%, 6 points over the 14% target) is too wet. Fields 1 (13%) and
+    2 (14.4%) are both ready; field 2 is nearer (1 h, against 2 h), so it goes first: 2 ha at
+    1 ha/h after the drive. Then field 1, 1 h away, until it must set off home (2 h) at hour 6 to be
+    back (place 3) by hour 8. It stays home for the night."""
+    params, value = farmer_farm([2, 10, 2], day_hours=8, plan_hours=10)
+    params["travel_hours"] = [  # fields 0-2, then the depot
+        [0, 1, 1, 1],
+        [1, 0, 1, 2],
+        [1, 1, 0, 1],
+        [1, 2, 1, 0],
+    ]
+    state = {
+        "remaining_ha": np.array([2.0, 10.0, 2.0]),
+        "machine_at": np.array([3]),
+        "moisture_pct": np.array([20.0, 13.0, 14.4]),
+        "hour_of_day": 0,
+        "rain_mm": np.zeros((2, 3, 10)),  # [member, field, hour]
+    }
+    assert plan_farmer(value, state, params)[0] == pytest.approx([2, 2, 2, 1, 1, 1, 3, 3, 3, 3])
+
+
+def test_farmer_finishes_what_it_started_and_waits_on_a_wet_day():
+    """A 6-hour day. Field 0 is half cut (17%), field 1 untouched and readier (14%): the combine
+    goes back to field 0, and sets off home (1 h) at hour 5. With a wet forecast it stays in the
+    yard (place 2) all day."""
+    params, value = farmer_farm([10, 10], day_hours=6, plan_hours=6)
+    state = {
+        "remaining_ha": np.array([5.0, 10.0]),
+        "machine_at": np.array([2]),
+        "moisture_pct": np.array([17.0, 14.0]),
+        "hour_of_day": 0,
+        "rain_mm": np.zeros((2, 2, 6)),  # [member, field, hour]
+    }
+    assert plan_farmer(value, state, params)[0] == pytest.approx([0, 0, 0, 0, 0, 2])
+    state["rain_mm"] = np.ones((2, 2, 6))  # 6 wet hours, more than the 4 it puts up with
+    assert plan_farmer(value, state, params)[0] == pytest.approx([2] * 6)
+
+
+def test_farmer_sticks_to_the_morning_decision_during_the_day():
+    """Replanning at hour 2 of a 6-hour day. A combine in field 1 carries on although the new
+    reading says it's too wet (25%), until it heads home at hour 3. A combine in the yard stays
+    there although field 0 is fit: the farmer decided this morning."""
+    params, value = farmer_farm([10, 10], day_hours=6, plan_hours=6)
+    state = {
+        "remaining_ha": np.array([10.0, 8.0]),
+        "machine_at": np.array([1]),
+        "moisture_pct": np.array([14.0, 25.0]),
+        "hour_of_day": 2,
+        "rain_mm": np.zeros((2, 2, 6)),  # [member, field, hour]
+    }
+    assert plan_farmer(value, state, params)[0] == pytest.approx([1, 1, 1, 2, 2, 2])
+    state["machine_at"] = np.array([2])
+    assert plan_farmer(value, state, params)[0] == pytest.approx([2] * 6)
 
 
 def test_member_values_average_to_field_values():

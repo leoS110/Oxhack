@@ -37,7 +37,7 @@ def main():
 
     print(f"Planner: {name}")
     truth, get_forecast, first_hour, runs_used = past_rollout(start, end, params)
-    result = run_with_forecasts(truth, get_forecast, params, PLANNERS[name])
+    result = run_with_forecasts(truth, get_forecast, params, PLANNERS[name], first_hour.hour)
 
     print()
     print_results(result, params)

@@ -119,6 +119,13 @@ drive_gbp_per_hour: 95
 depot_when_idle: true              # send idle combines home if cheaper (every planner but mpc)
 depot_margin_gbp: 20               # only if it saves more than this
 
+# plan_farmer: the baseline, a farmer's day without our models (harvest/planners/README_farmer.md).
+# All our guesses at what farmers do, no sources yet.
+farmer_day_start_hour: 9           # UTC (10:00 BST), once the dew is off: the day's one decision, on the latest reading
+farmer_day_hours: 12               # most a combine is out in a day: leaves the yard at the start, back by the end
+farmer_fit_above_target_pct: 4     # cuts a field read at most this above its crop's target_moisture_pct (cereals 18%, oilseed rape 13%)
+farmer_max_wet_hours: 4            # stays in the yard all day if the forecast has more hours than this too wet to cut (rain_limit_mm) in the working day
+
 # plan_lagrangian
 lagrangian_iterations: 300
 lagrangian_first_step_gbp_per_ha: 50  # step k is this / k

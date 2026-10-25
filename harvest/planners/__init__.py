@@ -6,6 +6,7 @@ is run by compare.py.
 """
 
 from harvest.planners.common import WAIT
+from harvest.planners.farmer import plan_farmer
 from harvest.planners.greedy import (
     plan_urgencygreedy,
     plan_urgencygreedy_withlookahead,
@@ -22,4 +23,5 @@ __all__ = [
     "plan_urgencygreedy_withlookahead",
     "plan_lagrangian",
     "plan_mpc",
+    "plan_farmer",  # the baseline: what a farmer would do without our forecasts
 ]
